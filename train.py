@@ -95,7 +95,7 @@ def get_fc_params(model):
         for module_name, module in b[i].named_modules():
             for name, param in module.named_parameters():
                 yield param
-                
+
 def load_filtered_state_dict(model, snapshot):
     # By user apaszke from discuss.pytorch.org
     model_dict = model.state_dict()
@@ -135,8 +135,8 @@ if __name__ == '__main__':
     data_set=args.dataset
     alpha = args.alpha
     output=args.output
-    
-    
+
+
     transformations = transforms.Compose([
         transforms.Resize(448),
         transforms.ToTensor(),
@@ -145,9 +145,9 @@ if __name__ == '__main__':
             std=[0.229, 0.224, 0.225]
         )
     ])
-    
-    
-    
+
+
+
     if data_set=="gaze360":
         model, pre_url = getArch_weights(args.arch, 90)
         if args.snapshot == '':
@@ -155,8 +155,8 @@ if __name__ == '__main__':
         else:
             saved_state_dict = torch.load(args.snapshot)
             model.load_state_dict(saved_state_dict)
-        
-        
+
+
         model.cuda(gpu)
         dataset=datasets.Gaze360(args.gaze360label_dir, args.gaze360image_dir, transformations, 180, 4)
         print('Loading data.')
@@ -173,13 +173,13 @@ if __name__ == '__main__':
         if not os.path.exists(output):
             os.makedirs(output)
 
-        
+
         criterion = nn.CrossEntropyLoss().cuda(gpu)
         reg_criterion = nn.MSELoss().cuda(gpu)
         softmax = nn.Softmax(dim=1).cuda(gpu)
         idx_tensor = [idx for idx in range(90)]
         idx_tensor = Variable(torch.FloatTensor(idx_tensor)).cuda(gpu)
-        
+
 
         # Optimizer gaze
         optimizer_gaze = torch.optim.Adam([
@@ -187,17 +187,17 @@ if __name__ == '__main__':
             {'params': get_non_ignored_params(model), 'lr': args.lr},
             {'params': get_fc_params(model), 'lr': args.lr}
         ], args.lr)
-       
+
 
         configuration = f"\ntrain configuration, gpu_id={args.gpu_id}, batch_size={batch_size}, model_arch={args.arch}\nStart testing dataset={data_set}, loader={len(train_loader_gaze)}------------------------- \n"
         print(configuration)
         for epoch in range(num_epochs):
             sum_loss_pitch_gaze = sum_loss_yaw_gaze = iter_gaze = 0
 
-            
+
             for i, (images_gaze, labels_gaze, cont_labels_gaze,name) in enumerate(train_loader_gaze):
                 images_gaze = Variable(images_gaze).cuda(gpu)
-                
+
                 # Binned labels
                 label_pitch_gaze = Variable(labels_gaze[:, 0]).cuda(gpu)
                 label_yaw_gaze = Variable(labels_gaze[:, 1]).cuda(gpu)
@@ -239,7 +239,7 @@ if __name__ == '__main__':
                 torch.autograd.backward(loss_seq, grad_seq)
                 optimizer_gaze.step()
                 # scheduler.step()
-                
+
                 iter_gaze += 1
 
                 if (i+1) % 100 == 0:
@@ -253,17 +253,17 @@ if __name__ == '__main__':
                             sum_loss_yaw_gaze/iter_gaze
                         )
                         )
-        
-          
+
+
             if epoch % 1 == 0 and epoch < num_epochs:
                 print('Taking snapshot...',
                     torch.save(model.state_dict(),
                                 output +'/'+
                                 '_epoch_' + str(epoch+1) + '.pkl')
                     )
-            
 
-   
+
+
     elif data_set=="mpiigaze":
         folder = os.listdir(args.gazeMpiilabel_dir)
         folder.sort()
@@ -271,25 +271,26 @@ if __name__ == '__main__':
         for fold in range(15):
             model, pre_url = getArch_weights(args.arch, 28)
             load_filtered_state_dict(model, model_zoo.load_url(pre_url))
-            model = nn.DataParallel(model)
+            #model = nn.DataParallel(model)
             model.to(gpu)
             print('Loading data.')
-            dataset=datasets.Mpiigaze(testlabelpathombined,args.gazeMpiimage_dir, transformations, True, fold)
+            dataset=datasets.Mpiigaze(testlabelpathombined,args.gazeMpiimage_dir, transformations, True, 180, fold)
             train_loader_gaze = DataLoader(
                 dataset=dataset,
                 batch_size=int(batch_size),
                 shuffle=True,
-                num_workers=4,
+                num_workers=0,
                 pin_memory=True)
             torch.backends.cudnn.benchmark = True
 
             summary_name = '{}_{}'.format('L2CS-mpiigaze', int(time.time()))
-            
+            output = os.path.join(output, summary_name)
 
-            if not os.path.exists(os.path.join(output+'/{}'.format(summary_name),'fold' + str(fold))):
-                os.makedirs(os.path.join(output+'/{}'.format(summary_name),'fold' + str(fold)))
 
-            
+            if not os.path.exists(os.path.join(output,'fold' + str(fold))):
+                os.makedirs(os.path.join(output,'fold' + str(fold)))
+
+
             criterion = nn.CrossEntropyLoss().cuda(gpu)
             reg_criterion = nn.MSELoss().cuda(gpu)
             softmax = nn.Softmax(dim=1).cuda(gpu)
@@ -297,20 +298,26 @@ if __name__ == '__main__':
             idx_tensor = Variable(torch.FloatTensor(idx_tensor)).cuda(gpu)
 
             # Optimizer gaze
+            #optimizer_gaze = torch.optim.Adam([
+            #   {'params': get_ignored_params(model, args.arch), 'lr': 0},
+            #   {'params': get_non_ignored_params(model, args.arch), 'lr': args.lr},
+            #   {'params': get_fc_params(model, args.arch), 'lr': args.lr}
+            #], args.lr)
+
             optimizer_gaze = torch.optim.Adam([
-                {'params': get_ignored_params(model, args.arch), 'lr': 0},
-                {'params': get_non_ignored_params(model, args.arch), 'lr': args.lr},
-                {'params': get_fc_params(model, args.arch), 'lr': args.lr}
+                {'params': get_ignored_params(model), 'lr': 0},
+                {'params': get_non_ignored_params(model), 'lr': args.lr},
+                {'params': get_fc_params(model), 'lr': args.lr}
             ], args.lr)
 
-            
+
 
             configuration = f"\ntrain configuration, gpu_id={args.gpu_id}, batch_size={batch_size}, model_arch={args.arch}\n Start training dataset={data_set}, loader={len(train_loader_gaze)}, fold={fold}--------------\n"
             print(configuration)
             for epoch in range(num_epochs):
                 sum_loss_pitch_gaze = sum_loss_yaw_gaze = iter_gaze = 0
 
-                
+
                 for i, (images_gaze, labels_gaze, cont_labels_gaze,name) in enumerate(train_loader_gaze):
                     images_gaze = Variable(images_gaze).cuda(gpu)
 
@@ -371,7 +378,6 @@ if __name__ == '__main__':
                             )
                             )
 
-                
 
                 # Save models at numbered epochs.
                 if epoch % 1 == 0 and epoch < num_epochs:
@@ -380,7 +386,3 @@ if __name__ == '__main__':
                                     output+'/fold' + str(fold) +'/'+
                                     '_epoch_' + str(epoch+1) + '.pkl')
                         )
-                    
-                    
-
-   
