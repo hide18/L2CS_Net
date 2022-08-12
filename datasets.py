@@ -36,8 +36,8 @@ class Gaze360(Dataset):
                     label = np.array(gaze2d.split(",")).astype("float")
                     if abs((label[0]*180/np.pi)) <= angle and abs((label[1]*180/np.pi)) <= angle:
                         self.lines.append(line)
-                    
-        print(len(self.lines))                
+
+        print(len(self.lines))
         print("{} items removed from dataset that have an angle > {}".format(self.orig_list_len-len(self.lines), angle))
 
     def __len__(self):
@@ -66,26 +66,25 @@ class Gaze360(Dataset):
         # img=torch.from_numpy(fimg).type(torch.FloatTensor)
 
         if self.transform:
-            img = self.transform(img)        
-        
+            img = self.transform(img)
+
         # Bin values
         bins = np.array(range(-1*self.angle, self.angle, self.binwidth))
         binned_pose = np.digitize([pitch, yaw], bins) - 1
 
         labels = binned_pose
         cont_labels = torch.FloatTensor([pitch, yaw])
-        
+
 
         return img, labels, cont_labels, name
 
-class Mpiigaze(Dataset): 
+class Mpiigaze(Dataset):
   def __init__(self, pathorg, root, transform, train, angle,fold=0):
     self.transform = transform
     self.root = root
     self.orig_list_len = 0
     self.lines = []
-    #path=pathorg.copy()
-    path=pathorg
+    path=pathorg.copy()
     if train==True:
       path.pop(fold)
     else:
@@ -114,7 +113,7 @@ class Mpiigaze(Dataset):
 
     print(len(self.lines))
     print("{} items removed from dataset that have an angle > {}".format(self.orig_list_len-len(self.lines),angle))
-        
+
   def __len__(self):
     return len(self.lines)
 
@@ -142,10 +141,10 @@ class Mpiigaze(Dataset):
     # fimg = cv2.resize(fimg, (448, 448))/255.0
     # fimg = fimg.transpose(2, 0, 1)
     # img=torch.from_numpy(fimg).type(torch.FloatTensor)
-    
+
     if self.transform:
-        img = self.transform(img)        
-    
+        img = self.transform(img)
+
     # Bin values
     bins = np.array(range(-42, 42,3))
     binned_pose = np.digitize([pitch, yaw], bins) - 1
@@ -155,5 +154,3 @@ class Mpiigaze(Dataset):
 
 
     return img, labels, cont_labels, name
-
-

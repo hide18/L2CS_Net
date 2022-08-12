@@ -1,3 +1,4 @@
+from cgi import test
 import os
 import argparse
 import time
@@ -79,7 +80,6 @@ def get_ignored_params(model):
                 yield param
 
 def get_non_ignored_params(model):
-    # Generator function that yields params that will be optimized.
     b = [model.layer1, model.layer2, model.layer3, model.layer4]
     for i in range(len(b)):
         for module_name, module in b[i].named_modules():
@@ -268,6 +268,10 @@ if __name__ == '__main__':
         folder = os.listdir(args.gazeMpiilabel_dir)
         folder.sort()
         testlabelpathombined = [os.path.join(args.gazeMpiilabel_dir, j) for j in folder]
+
+        summary_name = '{}_{}'.format('L2CS-mpiigaze', int(time.time()))
+        output = os.path.join(output, summary_name)
+
         for fold in range(15):
             model, pre_url = getArch_weights(args.arch, 28)
             load_filtered_state_dict(model, model_zoo.load_url(pre_url))
@@ -282,10 +286,6 @@ if __name__ == '__main__':
                 num_workers=0,
                 pin_memory=True)
             torch.backends.cudnn.benchmark = True
-
-            summary_name = '{}_{}'.format('L2CS-mpiigaze', int(time.time()))
-            output = os.path.join(output, summary_name)
-
 
             if not os.path.exists(os.path.join(output,'fold' + str(fold))):
                 os.makedirs(os.path.join(output,'fold' + str(fold)))
