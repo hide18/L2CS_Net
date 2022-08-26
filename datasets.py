@@ -19,16 +19,17 @@ class Gaze360(Dataset):
           angle=90
         self.binwidth=binwidth
         self.lines = []
-        if isinstance(path, list):
+
+        if isinstance(path, list): #pathで指定したlabelに含まれるデータがlist型の場合
             for i in path:
                 with open(i) as f:
                     print("here")
                     line = f.readlines()
                     line.pop(0)
                     self.lines.extend(line)
-        else:
+        else: #list型のデータでない場合
             with open(path) as f:
-                lines = f.readlines()
+                lines = f.readlines() #ファイル全部を一括で読み込み、文字列のリストにする
                 lines.pop(0)
                 self.orig_list_len = len(lines)
                 for line in lines:
@@ -69,8 +70,8 @@ class Gaze360(Dataset):
             img = self.transform(img)
 
         # Bin values
-        bins = np.array(range(-1*self.angle, self.angle, self.binwidth))
-        binned_pose = np.digitize([pitch, yaw], bins) - 1
+        bins = np.array(range(-1*self.angle, self.angle, self.binwidth)) #-180~180までの等差4の等差数列の配列
+        binned_pose = np.digitize([pitch, yaw], bins) - 1 #pitch, yawそれぞれがどのbinのどのグループに属しているかをdigitizeし、その配列をそれぞれ一つ前にする ex)[2, 1] -> [1, 0]
 
         labels = binned_pose
         cont_labels = torch.FloatTensor([pitch, yaw])
