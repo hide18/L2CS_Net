@@ -2,6 +2,7 @@ from cgi import test
 import os
 import argparse
 import time
+import datetime
 
 import torch.utils.model_zoo as model_zoo
 import torch
@@ -168,7 +169,8 @@ if __name__ == '__main__':
             pin_memory=True)
         torch.backends.cudnn.benchmark = True
 
-        summary_name = '{}_{}'.format('L2CS-gaze360-', int(time.time()))
+        today = datetime.datetime.fromtimestamp(time.time())
+        summary_name = '{}_{}'.format('L2CS-gaze360-', str(today.strftime('%Y/%m/%d_%H:%M:%S')))
         output=os.path.join(output, summary_name)
         if not os.path.exists(output):
             os.makedirs(output)
@@ -269,7 +271,8 @@ if __name__ == '__main__':
         folder.sort()
         testlabelpathombined = [os.path.join(args.gazeMpiilabel_dir, j) for j in folder]
 
-        summary_name = '{}_{}'.format('L2CS-mpiigaze', int(time.time()))
+        today = datetime.datetime.fromtimestamp(time.time())
+        summary_name = '{}_{}'.format('L2CS-mpiigaze', str(today.strftime('%Y/%m/%d_%H:%M:%S')))
         output = os.path.join(output, summary_name)
 
         for fold in range(15):
