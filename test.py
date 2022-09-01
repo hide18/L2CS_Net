@@ -120,7 +120,7 @@ if __name__ == '__main__':
             pin_memory=True)
 
 
-        model_name = snapshot_path.stem
+        model_name = pathlib.Path(snapshot_path).stem
         evalpath=os.path.join(evalpath, model_name)
         if not os.path.exists(evalpath):
             os.makedirs(evalpath)
@@ -204,6 +204,9 @@ if __name__ == '__main__':
     elif data_set=="mpiigaze":
         model_used=getArch(arch, bins)
 
+        model_name = pathlib.Path(snapshot_path).stem
+        evalpath=os.path.join(evalpath, model_name)
+
         for fold in range(15):
             folder = os.listdir(args.gazeMpiilabel_dir)
             folder.sort()
@@ -217,8 +220,6 @@ if __name__ == '__main__':
                 num_workers=4,
                 pin_memory=True)
 
-            model_name = snapshot_path.stem
-            evalpath=os.path.join(evalpath, model_name)
             if not os.path.exists(os.path.join(evalpath, f"fold"+str(fold))):
                 os.makedirs(os.path.join(evalpath, f"fold"+str(fold)))
 
@@ -236,7 +237,7 @@ if __name__ == '__main__':
                 for epochs in folder:
                     model=model_used
                     saved_state_dict = torch.load(os.path.join(snapshot_path+"/fold"+str(fold),epochs))
-                    model= nn.DataParallel(model,device_ids=[0])
+                    #model= nn.DataParallel(model,device_ids=[0])
                     model.load_state_dict(saved_state_dict)
                     model.cuda(gpu)
                     model.eval()

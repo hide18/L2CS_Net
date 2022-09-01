@@ -14,18 +14,22 @@ def parse_args():
         '--respath', dest='respath', help='path for saving result.',
         default="evaluation\L2CS-gaze360-_standard-10", type=str)
 
+    args = parser.parse_args()
+    return args
+
 if __name__ == '__main__':
 
     args = parse_args()
-    evalpath =args.evalpath
-    respath=args.respath
-    if not os.path.exist(respath):
+    evalpath = args.evalpath
+    respath = args.respath
+    if not os.path.exists(respath):
             os.makedirs(respath)
-    with open(os.path.join(respath,"avg.log"), 'w') as outfile:    
+    with open(os.path.join(respath,"avg.log"), 'w') as outfile:
         outfile.write("Average equal\n")
 
         min=10.0
-        dirlist = os.listdir(evalpath)
+        files = os.listdir(evalpath)
+        dirlist = [f for f in files if os.path.isdir(os.path.join(evalpath, f))]
         dirlist.sort()
         l=0.0
         for j in range(50):
@@ -33,15 +37,15 @@ if __name__ == '__main__':
             avg=0.0
             h=j+3
             for i in dirlist:
-                with open(evalpath+"/"+i+"/mpiigaze_binned.log") as myfile:
-                    
+                with open(evalpath+"/"+i+"/mpiigaze.log") as myfile:
+
                     x=list(myfile)[h]
-                    str1 = "" 
-                    
-                    # traverse in the string  
-                    for ele in x: 
-                        str1 += ele  
-                    split_string = str1.split("MAE:",1)[1] 
+                    str1 = ""
+
+                    # traverse in the string
+                    for ele in x:
+                        str1 += ele
+                    split_string = str1.split("MAE:",1)[1]
                     avg+=float(split_string)
 
             avg=avg/15.0
@@ -50,5 +54,5 @@ if __name__ == '__main__':
                 l=j+1
             outfile.write("epoch"+str(j+1)+"= "+str(avg)+"\n")
 
-        outfile.write("min angular error equal= "+str(min)+"at epoch= "+str(l)+"\n")
+        outfile.write("min angular error equal = "+str(min)+" at epoch = "+str(l)+"\n")
     print(min)
