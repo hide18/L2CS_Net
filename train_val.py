@@ -277,7 +277,6 @@ if __name__ == '__main__':
                 images = Variable(images).cuda(gpu)
                 total += cont_labels.size(0)
 
-
                 label_pitch = cont_labels[:, 0].float()*np.pi/180
                 label_yaw = cont_labels[:, 1].float()*np.pi/180
 
@@ -298,10 +297,7 @@ if __name__ == '__main__':
                 for p, y, pl, yl in zip(pitch_predicted, yaw_predicted, label_pitch, label_yaw):
                   avg_error += angular(gazeto3d([p, y]), gazeto3d([pl, yl]))
 
-                if (j+1) % 100 == 0:
-                  print('Val : Epoch [%d/%d], MAE : %.4f' % (epoch+1, num_epochs, avg_error/total))
-
-
+              print('Val : Epoch [%d/%d], MAE : %.4f' % (epoch+1, num_epochs, avg_error/total))
 
             if epoch % 1 == 0 and epoch < num_epochs:
                 if torch.save(model.state_dict(), output +'/'+'_epoch_'+ str(epoch+1) + '.pkl') == None:
