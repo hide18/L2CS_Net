@@ -204,7 +204,7 @@ if __name__ == '__main__':
         ], args.lr)
 
 
-        configuration = f"\ntrain configuration, gpu_id={args.gpu_id}, batch_size={batch_size}, model_arch={args.arch}\nStart testing dataset={data_set}, loader={len(train_loader_gaze)}------------------------- \n"
+        configuration = f"\ntrain configuration, gpu_id={args.gpu_id}, batch_size={batch_size}, model_arch={args.arch}\nStart training and validation dataset={data_set}------------------------- \n"
         print(configuration)
         for epoch in range(num_epochs):
             sum_loss_pitch_gaze = sum_loss_yaw_gaze = iter_gaze = 0
@@ -242,7 +242,11 @@ if __name__ == '__main__':
 
                 # Total loss
                 loss_pitch_gaze += alpha * loss_reg_pitch
-                loss_yasum_loss_pitch_gaze = sum_loss_yaw_gaze = iter_gaze = 0
+                loss_yaw_gaze += alpha * loss_reg_yaw
+
+                sum_loss_pitch_gaze += loss_pitch_gaze
+                sum_loss_yaw_gaze += loss_yaw_gaze
+
                 loss_seq = [loss_pitch_gaze, loss_yaw_gaze]
                 grad_seq = [torch.tensor(1.0).cuda(gpu) for _ in range(len(loss_seq))]
                 optimizer_gaze.zero_grad(set_to_none=True)
@@ -264,7 +268,7 @@ if __name__ == '__main__':
                         )
                         )
 
-            sum_loss_pitch_gaze = sum_loss_yaw_gaze = iter_gaze = total = 0
+            total = 0
             avg_error = 0.0
             model.eval()
             with torch.no_grad():
@@ -295,7 +299,7 @@ if __name__ == '__main__':
                   avg_error += angular(gazeto3d([p, y]), gazeto3d([pl, yl]))
 
                 if (j+1) % 100 == 0:
-                  print('Epoch [%d/%d], MAE : %.4f' % (epoch+1, num_epochs, ))
+                  print('Val : Epoch [%d/%d], MAE : %.4f' % (epoch+1, num_epochs, avg_error/total))
 
 
 
