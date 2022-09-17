@@ -1,3 +1,4 @@
+from cProfile import label
 from cgi import test
 import os
 import argparse
@@ -273,7 +274,11 @@ if __name__ == '__main__':
             model.eval()
             with torch.no_grad():
               for j, (images, labels, cont_labels, name) in enumerate(val_loader_gaze):
-la
+                images = Variable(images).cuda(gpu)
+                total += cont_labels.size(0)
+
+                label_pitch = cont_labels[:, 0].float()*np.pi/180
+                label_yaw = cont_labels[:, 1].float() * np.pi/180
 
                 gaze_pitch, gaze_yaw = model(images)
 
