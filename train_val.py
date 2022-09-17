@@ -143,7 +143,7 @@ if __name__ == '__main__':
 
 
     transformations = transforms.Compose([
-        transforms.Resize(448),
+        transforms.Resize(224),
         transforms.ToTensor(),
         transforms.Normalize(
             mean=[0.485, 0.456, 0.406],
@@ -273,12 +273,7 @@ if __name__ == '__main__':
             model.eval()
             with torch.no_grad():
               for j, (images, labels, cont_labels, name) in enumerate(val_loader_gaze):
-
-                images = Variable(images).cuda(gpu)
-                total += cont_labels.size(0)
-
-                label_pitch = cont_labels[:, 0].float()*np.pi/180
-                label_yaw = cont_labels[:, 1].float()*np.pi/180
+la
 
                 gaze_pitch, gaze_yaw = model(images)
 
