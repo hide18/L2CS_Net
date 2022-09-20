@@ -218,6 +218,7 @@ if __name__ == '__main__':
         for epoch in range(num_epochs):
           sum_loss_pitch_gaze = sum_loss_yaw_gaze = iter_gaze = 0
 
+          model.train()
           for i, (images_gaze, labels_gaze, cont_labels_gaze,name) in enumerate(train_loader_gaze):
             images_gaze = Variable(images_gaze).cuda(gpu)
 
@@ -278,6 +279,7 @@ if __name__ == '__main__':
                     )
 
           #validation
+          model.eval()
           with open(os.path.join(valpath, data_set+".log"), 'w') as outfile:
             total = 0
             avg_error = 0.0
