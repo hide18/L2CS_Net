@@ -48,7 +48,7 @@ def parse_args():
     parser.add_argument(
         '--output', dest='output', help='Path of output models.',
         default='output/snapshots/', type=str)
-    parser.add.agument(
+    parser.add_argument(
         '--valpath', dest='valpath', help='Path of validation results.',
         default='validation/gaze360/', type=str)
     parser.add_argument(
