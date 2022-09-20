@@ -144,7 +144,7 @@ if __name__ == '__main__':
 
 
     transformations = transforms.Compose([
-        transforms.Resize(224),
+        transforms.Resize((448, 448)),
         transforms.ToTensor(),
         transforms.Normalize(
             mean=[0.485, 0.456, 0.406],
