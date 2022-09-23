@@ -188,7 +188,7 @@ if __name__ == '__main__':
         torch.backends.cudnn.benchmark = True
 
         today = datetime.datetime.fromtimestamp(time.time())
-        summary_name = '{}_{}'.format('L2CS-gaze360-', str(today.strftime('%Y-%-m.%-d_%-H*%-M*%-S')))
+        summary_name = '{}_{}'.format('L2CS-gaze360-', str(today.strftime('%Y-%-m*%-d_%-H*%-M*%-S')))
         output=os.path.join(output, summary_name)
         if not os.path.exists(output):
             os.makedirs(output)
@@ -312,7 +312,7 @@ if __name__ == '__main__':
             x = epoch+1
             epoch_list.append(x)
             avg_MAE.append(avg_error/total)
-            loger = f"---Val--- Epoch [{x}/{num_epochs}, MAE : {avg_error/total}\n"
+            loger = f"---Val--- Epoch [{x}/{num_epochs}], MAE : {avg_error/total}\n"
             outfile.write(loger)
             print(loger)
 
@@ -331,7 +331,7 @@ if __name__ == '__main__':
         testlabelpathombined = [os.path.join(args.gazeMpiilabel_dir, j) for j in folder]
 
         today = datetime.datetime.fromtimestamp(time.time())
-        summary_name = '{}_{}'.format('L2CS-mpiigaze', str(today.strftime('%Y-%-m.%d_%-H*%-M*%-S')))
+        summary_name = '{}_{}'.format('L2CS-mpiigaze', str(today.strftime('%Y-%-m*%d_%-H*%-M*%-S')))
         output = os.path.join(output, summary_name)
 
         for fold in range(15):

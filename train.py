@@ -12,6 +12,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 import torch.backends.cudnn as cudnn
 import torchvision
+from torchsummary import summary
 
 import datasets
 from model import L2CS
@@ -81,6 +82,7 @@ def get_ignored_params(model):
                 yield param
 
 def get_non_ignored_params(model):
+    # Generator function that yields params that will be optimized.
     b = [model.layer1, model.layer2, model.layer3, model.layer4]
     for i in range(len(b)):
         for module_name, module in b[i].named_modules():
@@ -151,26 +153,22 @@ if __name__ == '__main__':
 
     if data_set=="gaze360":
         model, pre_url = getArch_weights(args.arch, 90)
-        if args.snapshot == '':
-            load_filtered_state_dict(model, model_zoo.load_url(pre_url))
-        else:
-            saved_state_dict = torch.load(args.snapshot)
-            model.load_state_dict(saved_state_dict)
 
 
         model.cuda(gpu)
+        summary(model, (3, 224, 224))
         dataset=datasets.Gaze360(args.gaze360label_dir, args.gaze360image_dir, transformations, 180, 4)
         print('Loading data.')
         train_loader_gaze = DataLoader(
             dataset=dataset,
             batch_size=int(batch_size),
             shuffle=True,
-            num_workers=0,
+            num_workers=8,
             pin_memory=True)
         torch.backends.cudnn.benchmark = True
 
         today = datetime.datetime.fromtimestamp(time.time())
-        summary_name = '{}_{}'.format('L2CS-gaze360-', str(today.strftime('%Y/%m/%d_%H:%M:%S')))
+        summary_name = '{}_{}'.format('L2CS-gaze360-', str(today.strftime('%Y-%-m*%-d_%-H*%-M*%-S')))
         output=os.path.join(output, summary_name)
         if not os.path.exists(output):
             os.makedirs(output)
@@ -197,7 +195,7 @@ if __name__ == '__main__':
             sum_loss_pitch_gaze = sum_loss_yaw_gaze = iter_gaze = 0
 
 
-            for i, (images_gaze, labels_gaze, cont_labels_gaze,name) in enumerate(train_loader_gaze):
+            for i, (images_gaze, labels_gaze, cont_labels_gaze, name) in enumerate(train_loader_gaze):
                 images_gaze = Variable(images_gaze).cuda(gpu)
 
                 # Binned labels
@@ -272,7 +270,7 @@ if __name__ == '__main__':
         testlabelpathombined = [os.path.join(args.gazeMpiilabel_dir, j) for j in folder]
 
         today = datetime.datetime.fromtimestamp(time.time())
-        summary_name = '{}_{}'.format('L2CS-mpiigaze', str(today.strftime('%Y/%m/%d_%H:%M:%S')))
+        summary_name = '{}_{}'.format('L2CS-mpiigaze', str(today.strftime('%Y-%-m*%d_%-H*%-M*%-S')))
         output = os.path.join(output, summary_name)
 
         for fold in range(15):
@@ -286,7 +284,7 @@ if __name__ == '__main__':
                 dataset=dataset,
                 batch_size=int(batch_size),
                 shuffle=True,
-                num_workers=0,
+                num_workers=8,
                 pin_memory=True)
             torch.backends.cudnn.benchmark = True
 
