@@ -215,13 +215,14 @@ if __name__ == '__main__':
         print(configuration)
         epoch_list=[]
         avg_MAE=[]
-        with open(os.path.join(valpath, data_set+".log"), 'w') as outfile:
+        with open(os.path.join(valpath, data_set+".log"), 'a') as outfile:
             for epoch in range(num_epochs):
                 sum_loss_pitch_gaze = sum_loss_yaw_gaze = iter_gaze = 0
 
                 model.train()
                 for i, (images_gaze, labels_gaze, cont_labels_gaze,name) in enumerate(train_loader_gaze):
                     images_gaze = Variable(images_gaze).cuda(gpu)
+
 
                     # Binned labels
                     label_pitch_gaze = Variable(labels_gaze[:, 0]).cuda(gpu)
