@@ -215,7 +215,8 @@ if __name__ == '__main__':
         print(configuration)
         epoch_list=[]
         avg_MAE=[]
-        with open(os.path.join(valpath, data_set+".log"), 'a') as outfile:
+        with open(os.path.join(valpath, data_set+".log"), 'w') as outfile:
+            outfile.write(configuration)
             for epoch in range(num_epochs):
                 sum_loss_pitch_gaze = sum_loss_yaw_gaze = iter_gaze = 0
 
@@ -281,7 +282,6 @@ if __name__ == '__main__':
                             )
 
                 #validation
-                model.eval()
                 total = 0
                 avg_error = 0.0
                 model.eval()
@@ -314,8 +314,8 @@ if __name__ == '__main__':
                 epoch_list.append(x)
                 avg_MAE.append(avg_error/total)
                 loger = f"---Val--- Epoch [{x}/{num_epochs}], MAE : {avg_error/total}\n"
-                outfile.write(loger)
                 print(loger)
+                outfile.write(loger)
 
             if epoch % 1 == 0 and epoch < num_epochs:
                 if torch.save(model.state_dict(), output +'/'+'_epoch_'+ str(epoch+1) + '.pkl') == None:
