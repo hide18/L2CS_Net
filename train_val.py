@@ -317,9 +317,9 @@ if __name__ == '__main__':
                 print(loger)
                 outfile.write(loger)
 
-            if epoch % 1 == 0 and epoch < num_epochs:
-                if torch.save(model.state_dict(), output +'/'+'_epoch_'+ str(epoch+1) + '.pkl') == None:
-                    print('Taking snapshot...    success')
+                if epoch % 1 == 0 and epoch < num_epochs:
+                    if torch.save(model.state_dict(), output +'/'+'_epoch_'+ str(epoch+1) + '.pkl') == None:
+                        print('Taking snapshot...    success')
 
 
 
