@@ -7,9 +7,9 @@ import math
 import torch.nn.functional as F
 from torchinfo import summary
 
-class L2CS_(nn.Module):
+class GC(nn.Module):
   def __init__(self, block, layers, image_channels, num_bins):
-    super(L2CS_, self).__init__()
+    super(GC, self).__init__()
 
     self.in_channels = 64
 
@@ -93,7 +93,7 @@ class L2CS_(nn.Module):
     return nn.Sequential(*layers)
 
 #if you check this network, try to start the code.
-#model = L2CS_(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, 90)
+#model = (torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, 90)
 #y = torch.rand(4, 3, 224, 224)
 #print(model(y)[0].shape)
-#summary(model, (1, 3, 224, 224))
+#summary(model, (1, 3, 20, 12))
