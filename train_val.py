@@ -271,7 +271,7 @@ if __name__ == '__main__':
 
                     if (i+1) % 100 == 0:
                         print('Epoch [%d/%d], Iter [%d/%d] Losses: '
-                            'Gaze Yaw %.4f,Gaze Pitch %.4f' % (
+                            'Gaze Pitch %.4f,Gaze Yaw %.4f' % (
                                 epoch+1,
                                 num_epochs,
                                 i+1,
