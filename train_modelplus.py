@@ -165,7 +165,7 @@ if __name__=='__main__':
 
     #validation dataloader
     val_label = os.path.join(label_path, "val.label")
-    val_dataset = datasets_plus.Gaze360(val_label, args.image_dir, transformation_face, transformation_eye, 180, 4)
+    val_dataset = datasets_plus.Gaze360(val_label, args.image_dir, transformation_face, transformation_eye, 180, 4, train=False)
     val_loader = DataLoader(
       dataset=val_dataset,
       batch_size=int(batch_size),
