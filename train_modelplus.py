@@ -3,7 +3,6 @@ from cgi import test
 import os, argparse, time, datetime
 from random import shuffle
 
-from yaml import parse
 import numpy as np
 
 import torch
