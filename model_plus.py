@@ -31,7 +31,7 @@ class GN(nn.Module):
       block, layers[3], first_conv_out_channels=512, stride=2
     )
 
-    self.avapool = nn.AdaptiveAvgPool2d((1, 1))
+    self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
 
     self.fc_yaw_gaze = nn.Linear(512 * block.expansion * 3, num_bins)
     self.fc_pitch_gaze = nn.Linear(512 * block.expansion * 3, num_bins)
@@ -70,7 +70,7 @@ class GN(nn.Module):
     x1 = self.layer2(x1)
     x1 = self.layer3(x1)
     x1 = self.layer4(x1)
-    x1 = self.avapool(x1)
+    x1 = self.avgpool(x1)
     x1 = x1.view(x1.shape[0], -1)
     #print(x1.shape)
 
@@ -84,7 +84,7 @@ class GN(nn.Module):
     x2 = self.layer2(x2)
     x2 = self.layer3(x2)
     x2 = self.layer4(x2)
-    x2 = self.avapool(x2)
+    x2 = self.avgpool(x2)
     x2 = x2.view(x2.shape[0], -1)
     #print(x2.shape)
 
@@ -97,7 +97,7 @@ class GN(nn.Module):
     x3 = self.layer2(x3)
     x3 = self.layer3(x3)
     x3 = self.layer4(x3)
-    x3 = self.avapool(x3)
+    x3 = self.avgpool(x3)
     x3 = x3.view(x3.shape[0], -1)
     #print(x3.shape)
 

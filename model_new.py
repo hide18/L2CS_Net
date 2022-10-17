@@ -31,7 +31,7 @@ class GC(nn.Module):
       block, layers[3], first_conv_out_channels=512, stride=2
     )
 
-    self.avapool = nn.AdaptiveAvgPool2d((1, 1))
+    self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
 
     self.fc_yaw_gaze = nn.Sequential(
       nn.Linear(512 * block.expansion, 1000),
@@ -64,7 +64,7 @@ class GC(nn.Module):
     x = self.layer2(x)
     x = self.layer3(x)
     x = self.layer4(x)
-    x = self.avapool(x)
+    x = self.avgpool(x)
     x = x.view(x.shape[0], -1)
 
     pre_yaw_gaze = self.fc_yaw_gaze(x)
