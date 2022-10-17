@@ -65,7 +65,7 @@ class GC(nn.Module):
     x = self.layer3(x)
     x = self.layer4(x)
     x = self.avapool(x)
-    x = x.reshape(x.shape[0], -1)
+    x = x.view(x.shape[0], -1)
 
     pre_yaw_gaze = self.fc_yaw_gaze(x)
     pre_pitch_gaze = self.fc_pitch_gaze(x)
@@ -93,7 +93,5 @@ class GC(nn.Module):
     return nn.Sequential(*layers)
 
 #if you check this network, try to start the code.
-#model = (torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, 90)
-#y = torch.rand(4, 3, 224, 224)
-#print(model(y)[0].shape)
-#summary(model, (1, 3, 20, 12))
+#model = GC(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, 90)
+#summary(model, (1, 3, 60, 36)) #Input shape is your size.
