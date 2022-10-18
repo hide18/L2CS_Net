@@ -54,7 +54,7 @@ def parse_args():
     '--valpath', dest='valpath', help='Path of validation results.', default='validation/gaze360/', type=str
   )
 
-  args = parser,parse_args()
+  args = parser.parse_args()
   return args
 
 
@@ -187,9 +187,9 @@ if __name__=='__main__':
     softmax = nn.Softmax(dim=1).cuda(gpu)
 
     optimizer_gaze = torch.optim.Adam([
-      {'param' : get_ignored_params(model), 'lr' : 0},
-      {'param' : get_non_ignored_params(model), 'lr' : args.lr},
-      {'param' : get_fc_params(model), 'lr' : args.lr*5}
+      {'params' : get_ignored_params(model), 'lr' : 0},
+      {'params' : get_non_ignored_params(model), 'lr' : args.lr},
+      {'params' : get_fc_params(model), 'lr' : args.lr*5}
     ], lr = args.lr)
 
 
@@ -228,6 +228,7 @@ if __name__=='__main__':
           #Cross Entropy Loss
           loss_pitch = criterion(pitch, label_pitch)
           loss_yaw = criterion(yaw, label_yaw)
+          print(loss_pitch, loss_yaw)
 
           #Predict gaze angular
           pitch_predicted = softmax(pitch)
@@ -238,6 +239,7 @@ if __name__=='__main__':
           #MSE Loss
           loss_reg_pitch = reg_criterion(pitch_predicted, label_pitch_cont)
           loss_reg_yaw = reg_criterion(yaw_predicted, label_yaw_cont)
+          print(loss_reg_pitch, loss_reg_yaw)
 
           #Total Loss
           loss_pitch += alpha * loss_reg_pitch
@@ -248,7 +250,7 @@ if __name__=='__main__':
           loss_seq = [loss_pitch, loss_yaw]
           grad_seq = [torch.tensor(1.0).cuda(gpu) for _ in range(len(loss_seq))]
           optimizer_gaze.zero_grad(set_to_none=True)
-          torch.autogard.backward(loss_seq, grad_seq)
+          torch.autograd.backward(loss_seq, grad_seq)
           optimizer_gaze.step()
 
           iter_gaze += 1
