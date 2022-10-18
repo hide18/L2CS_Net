@@ -228,7 +228,6 @@ if __name__=='__main__':
           #Cross Entropy Loss
           loss_pitch = criterion(pitch, label_pitch)
           loss_yaw = criterion(yaw, label_yaw)
-          print(loss_pitch, loss_yaw)
 
           #Predict gaze angular
           pitch_predicted = softmax(pitch)
@@ -239,7 +238,6 @@ if __name__=='__main__':
           #MSE Loss
           loss_reg_pitch = reg_criterion(pitch_predicted, label_pitch_cont)
           loss_reg_yaw = reg_criterion(yaw_predicted, label_yaw_cont)
-          print(loss_reg_pitch, loss_reg_yaw)
 
           #Total Loss
           loss_pitch += alpha * loss_reg_pitch
@@ -256,9 +254,9 @@ if __name__=='__main__':
           iter_gaze += 1
 
           if (i+1) % 100 == 0:
-            print('Epoch [%d/%d], Iter [%d/%d], Losses : Gaze Pitch %.4f, Gaze Yaw %.4f' % (
-              epoch+1, num_epochs, i+1, len(train_dataset)//batch_size, sum_loss_pitch//iter_gaze, sum_loss_yaw//iter_gaze
-            ))
+            print('Epoch [%d/%d], Iter [%d/%d], Losses : Gaze Pitch %.4f, Gaze Yaw %.4f' %
+            (epoch+1, num_epochs, i+1, len(train_dataset)//batch_size, sum_loss_pitch/iter_gaze, sum_loss_yaw/iter_gaze)
+            )
 
         #validation
         total = 0

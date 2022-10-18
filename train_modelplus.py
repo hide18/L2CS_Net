@@ -54,7 +54,7 @@ def parse_args():
     '--valpath', dest='valpath', help='Path of validation results.', default='validation/gaze360/', type=str
   )
 
-  args = parser,parse_args()
+  args = parser.parse_args()
   return args
 
 
@@ -192,9 +192,9 @@ if __name__=='__main__':
     softmax = nn.Softmax(dim=1).cuda(gpu)
 
     optimizer_gaze = torch.optim.Adam([
-      {'param' : get_ignored_params(model), 'lr' : 0},
-      {'param' : get_non_ignored_params(model), 'lr' : args.lr},
-      {'param' : get_fc_params(model), 'lr' : args.lr*5}
+      {'params' : get_ignored_params(model), 'lr' : 0},
+      {'params' : get_non_ignored_params(model), 'lr' : args.lr},
+      {'params' : get_fc_params(model), 'lr' : args.lr*5}
     ], lr = args.lr)
 
 
@@ -255,15 +255,15 @@ if __name__=='__main__':
           loss_seq = [loss_pitch, loss_yaw]
           grad_seq = [torch.tensor(1.0).cuda(gpu) for _ in range(len(loss_seq))]
           optimizer_gaze.zero_grad(set_to_none=True)
-          torch.autogard.backward(loss_seq, grad_seq)
+          torch.autograd.backward(loss_seq, grad_seq)
           optimizer_gaze.step()
 
           iter_gaze += 1
 
           if (i+1) % 100 == 0:
-            print('Epoch [%d/%d], Iter [%d/%d], Losses : Gaze Pitch %.4f, Gaze Yaw %.4f' % (
-              epoch+1, num_epochs, i+1, len(train_dataset)//batch_size, sum_loss_pitch//iter_gaze, sum_loss_yaw//iter_gaze
-            ))
+            print('Epoch [%d/%d], Iter [%d/%d], Losses : Gaze Pitch %.4f, Gaze Yaw %.4f' %
+            (epoch+1, num_epochs, i+1, len(train_dataset)//batch_size, sum_loss_pitch/iter_gaze, sum_loss_yaw/iter_gaze)
+            )
 
         #validation
         total = 0
