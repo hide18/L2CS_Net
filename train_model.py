@@ -141,7 +141,6 @@ if __name__=='__main__':
   if dataset=="gaze360":
     model, pre_url = getArch_weights(args.arch, 90)
     model.cuda(gpu)
-    summary(model, (3, 448, 448))
     print('Loading data.')
 
     label_path = args.label_dir
