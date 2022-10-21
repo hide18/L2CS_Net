@@ -33,6 +33,11 @@ class GC(nn.Module):
 
     self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
 
+    #new model plus the fc layer
+    self.fc_yaw_gaze = nn.Linear(512 * block.expansion * 3, num_bins)
+    self.fc_pitch_gaze = nn.Linear(512 * block.expansion * 3, num_bins)
+
+    '''
     self.fc_yaw_gaze = nn.Sequential(
       nn.Linear(512 * block.expansion, 1000),
       nn.ReLU(inplace=True),
@@ -43,6 +48,7 @@ class GC(nn.Module):
       nn.ReLU(inplace=True),
       nn.Linear(1000, num_bins)
     )
+    '''
 
     self.fc_finetune = nn.Linear(512 * block.expansion, num_bins)
 

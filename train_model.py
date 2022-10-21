@@ -186,10 +186,11 @@ if __name__=='__main__':
     reg_criterion = nn.MSELoss().cuda(gpu)
     softmax = nn.Softmax(dim=1).cuda(gpu)
 
+    #original code use fc's param lr = lr
     optimizer_gaze = torch.optim.Adam([
       {'params' : get_ignored_params(model), 'lr' : 0},
       {'params' : get_non_ignored_params(model), 'lr' : args.lr},
-      {'params' : get_fc_params(model), 'lr' : args.lr*5}
+      {'params' : get_fc_params(model), 'lr' : args.lr}
     ], lr = args.lr)
 
 
