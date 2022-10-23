@@ -186,13 +186,31 @@ if __name__=='__main__':
     reg_criterion = nn.MSELoss().cuda(gpu)
     softmax = nn.Softmax(dim=1).cuda(gpu)
 
-    #original code use fc's param lr = lr
+    #Adam
     optimizer_gaze = torch.optim.Adam([
       {'params' : get_ignored_params(model), 'lr' : 0},
       {'params' : get_non_ignored_params(model), 'lr' : args.lr},
       {'params' : get_fc_params(model), 'lr' : args.lr}
     ], lr = args.lr)
 
+    #SGD
+    '''
+    optimizer_gaze = torch.optim.SGD(
+      [{'params' : get_ignored_params(model), 'lr' : 0},
+      {'params' : get_non_ignored_params(model), 'lr' : args.lr},
+      {'params' : get_fc_params(model), 'lr' : args.lr}],
+      lr = args.lr, momentum = 0.9
+    )
+    '''
+
+    #RAdam
+    '''
+    optimizer_gaze = torch.optim.RAdam([
+      {'params' : get_ignored_params(model), 'lr' : 0},
+      {'params' : get_non_ignored_params(model), 'lr' : args.lr},
+      {'params' : get_fc_params(model), 'lr' : args.lr}
+    ], lr = args.lr)
+    '''
 
     idx_tensor = [idx for idx in range(90)]
     idx_tensor = Variable(torch.FloatTensor(idx_tensor)).cuda(gpu)
