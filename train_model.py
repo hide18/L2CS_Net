@@ -199,7 +199,7 @@ if __name__=='__main__':
       [{'params' : get_ignored_params(model), 'lr' : 0},
       {'params' : get_non_ignored_params(model), 'lr' : args.lr},
       {'params' : get_fc_params(model), 'lr' : args.lr}],
-      lr = args.lr, momentum = 0.9
+      lr = args.lr, momentum = 0.9, weight_decay=0.0001
     )
     '''
 
