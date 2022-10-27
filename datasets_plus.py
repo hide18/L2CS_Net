@@ -3,7 +3,7 @@ import numpy as np
 import cv2
 
 import torch
-from torch.utils.data.datset import Dataset
+from torch.utils.data.dataset import Dataset
 from torchvision import transforms
 from PIL import Image, ImageFilter
 
@@ -61,7 +61,7 @@ class Gaze360(Dataset):
 
     face = Image.open(os.path.join(self.image_root, face))
     left = Image.open(os.path.join(self.image_root, lefteye))
-    right = Image.open(os.ptah.join(self.image_root, righteye))
+    right = Image.open(os.path.join(self.image_root, righteye))
 
     if self.transform_face is not None:
       face = self.transform_face(face)
