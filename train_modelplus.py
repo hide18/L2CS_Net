@@ -194,7 +194,7 @@ if __name__=='__main__':
     optimizer_gaze = torch.optim.Adam([
       {'params' : get_ignored_params(model), 'lr' : 0},
       {'params' : get_non_ignored_params(model), 'lr' : args.lr},
-      {'params' : get_fc_params(model), 'lr' : args.lr*5}
+      {'params' : get_fc_params(model), 'lr' : args.lr}
     ], lr = args.lr)
 
 
