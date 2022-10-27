@@ -25,7 +25,7 @@ def parse_args():
     '--gpu', dest='gpu_id', help='GPU device id to use [0]', default='0', type=str
   )
   parser.add_argument(
-    '--arch', dest='arch', help='GC use the backbone network.', default='ResNet50', type=str
+    '--arch', dest='arch', help='GC use the backbone network.', default='VGG19_bn', type=str
   )
   parser.add_argument(
     '--num_epochs', dest='num_epochs', help='Maximun number of training epochs.', default=50, type=int
