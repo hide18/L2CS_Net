@@ -74,6 +74,6 @@ class Gaze360(Dataset):
     binned_pose = np.digitize([pitch, yaw], bins) - 1
 
     labels = binned_pose
-    cont_labels = torch.FlaotTensor([pitch, yaw])
+    cont_labels = torch.FloatTensor([pitch, yaw])
 
     return face, left, right, labels, cont_labels, name
