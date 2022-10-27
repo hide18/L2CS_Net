@@ -10,6 +10,7 @@ import torch.nn as nn
 import torchvision
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
+import torch.utils.model_zoo as model_zoo
 from torchvision import transforms
 import torch.backends.cudnn as cudnn
 from torchsummary import summary
@@ -140,6 +141,11 @@ if __name__=='__main__':
 
   if dataset=="gaze360":
     model, pre_url = getArch_weights(args.arch, 90)
+    if args.snapshot == '':
+            load_filtered_state_dict(model, model_zoo.load_url(pre_url))
+    else:
+        saved_state_dict = torch.load(args.snapshot)
+        model.load_state_dict(saved_state_dict)
     model.cuda(gpu)
     summary(model, (3, 448, 448))
     print('Loading data.')

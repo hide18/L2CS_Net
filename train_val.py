@@ -160,6 +160,11 @@ if __name__ == '__main__':
 
     if data_set=="gaze360":
         model, pre_url = getArch_weights(args.arch, 90)
+        if args.snapshot == '':
+            load_filtered_state_dict(model, model_zoo.load_url(pre_url))
+        else:
+            saved_state_dict = torch.load(args.snapshot)
+            model.load_state_dict(saved_state_dict)
         model.cuda(gpu)
         summary(model, (3, 224, 224))
         print('Loading data.')

@@ -1,5 +1,6 @@
 from cProfile import label
 from cgi import test
+from multiprocessing import reduction
 import os, argparse, time, datetime
 from random import shuffle
 
@@ -15,8 +16,8 @@ from torchvision import transforms
 import torch.backends.cudnn as cudnn
 from torchsummary import summary
 
-import datasets_plus
-from model_plus import GN
+import datasets
+from model_drop import GC_loss
 from utils import gazeto3d, select_device, angular
 
 def parse_args():
@@ -100,19 +101,19 @@ def load_filtered_state_dict(model, snapshot):
 
 def getArch_weights(arch, bins):
   if arch == 'ResNet18':
-    model = GN(torchvision.models.resnet.BasicBlock, [2, 2, 2, 2], 3, bins)
+    model = GC_loss(torchvision.models.resnet.BasicBlock, [2, 2, 2, 2], 3, bins)
     pre_url = 'https://download.pytorch.org/models/resnet18-5c106cde.pth'
   elif arch == 'ResNet34':
-    model = GN(torchvision.models.resnet.BasicBlock, [3, 4, 6, 3], 3, bins)
+    model = GC_loss(torchvision.models.resnet.BasicBlock, [3, 4, 6, 3], 3, bins)
     pre_url = 'https://download.pytorch.org/models/resnet34-333f7ec4.pth'
   elif arch == 'ResNet101':
-    model = GN(torchvision.models.resnet.Botteleneck, [3, 4, 23, 3], 3, bins)
+    model = GC_loss(torchvision.models.resnet.Botteleneck, [3, 4, 23, 3], 3, bins)
     pre_url = 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth'
   elif arch == 'ResNet152':
-    model = GN(torchvision.models.resnet.Botteleneck, [3, 8, 36, 3], 3, bins)
+    model = GC_loss(torchvision.models.resnet.Botteleneck, [3, 8, 36, 3], 3, bins)
     pre_url = 'https://download.pytorch.org/models/resnet152-b121ed2d.pth'
   else:
-    model = GN(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, bins)
+    model = GC_loss(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, bins)
     pre_url = 'https://download.pytorch.org/models/resnet50-19c8e357.pth'
 
   return model, pre_url
@@ -132,14 +133,8 @@ if __name__=='__main__':
   valpath = args.valpath
   output = args.output
 
-  transformation_face = transforms.Compose([
+  transformations = transforms.Compose([
     transforms.Resize(448),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-  ])
-
-  transformation_eye = transforms.Compose([
-    transforms.Resize((72, 120)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
   ])
@@ -153,13 +148,14 @@ if __name__=='__main__':
         saved_state_dict = torch.load(args.snapshot)
         model.load_state_dict(saved_state_dict)
     model.cuda(gpu)
+    summary(model, (3, 448, 448))
     print('Loading data.')
 
     label_path = args.label_dir
 
     #traindata dataloader
     train_label = os.path.join(label_path, "train.label")
-    train_dataset = datasets_plus.Gaze360(train_label, args.image_dir, transformation_face, transformation_eye, 180, 4)
+    train_dataset = datasets.Gaze360(train_label, args.image_dir, transformations, 180, 4)
     train_loader = DataLoader(
       dataset=train_dataset,
       batch_size=int(batch_size),
@@ -170,7 +166,7 @@ if __name__=='__main__':
 
     #validation dataloader
     val_label = os.path.join(label_path, "val.label")
-    val_dataset = datasets_plus.Gaze360(val_label, args.image_dir, transformation_face, transformation_eye, 180, 4, train=False)
+    val_dataset = datasets.Gaze360(val_label, args.image_dir, transformations, 180, 4, train=False)
     val_loader = DataLoader(
       dataset=val_dataset,
       batch_size=int(batch_size),
@@ -182,7 +178,7 @@ if __name__=='__main__':
     torch.backends.cudnn.benchmark = True
 
     today = datetime.datetime.fromtimestamp(time.time())
-    summary_name = '{}_{}'.format('GN-gaze360', str(today.strftime('%Y-%-m*%-d_%-H*%-M*%-S')))
+    summary_name = '{}_{}'.format('GC-gaze360', str(today.strftime('%Y-%-m*%-d_%-H*%-M*%-S')))
 
     output = os.path.join(output, summary_name)
     if not os.path.exists(output):
@@ -192,17 +188,35 @@ if __name__=='__main__':
     if not os.path.exists(valpath):
       os.makedirs(valpath)
 
-
     criterion = nn.CrossEntropyLoss().cuda(gpu)
-    reg_criterion = nn.MSELoss().cuda(gpu)
+    reg_criterion = nn.functional.huber_loss().cuda(gpu)
     softmax = nn.Softmax(dim=1).cuda(gpu)
 
+    #Adam
     optimizer_gaze = torch.optim.Adam([
       {'params' : get_ignored_params(model), 'lr' : 0},
       {'params' : get_non_ignored_params(model), 'lr' : args.lr},
       {'params' : get_fc_params(model), 'lr' : args.lr}
     ], lr = args.lr)
 
+    #SGD
+    '''
+    optimizer_gaze = torch.optim.SGD(
+      [{'params' : get_ignored_params(model), 'lr' : 0},
+      {'params' : get_non_ignored_params(model), 'lr' : args.lr},
+      {'params' : get_fc_params(model), 'lr' : args.lr}],
+      lr = args.lr, momentum = 0.9, weight_decay=0.0001
+    )
+    '''
+
+    #RAdam
+    '''
+    optimizer_gaze = torch.optim.RAdam([
+      {'params' : get_ignored_params(model), 'lr' : 0},
+      {'params' : get_non_ignored_params(model), 'lr' : args.lr},
+      {'params' : get_fc_params(model), 'lr' : args.lr}
+    ], lr = args.lr)
+    '''
 
     idx_tensor = [idx for idx in range(90)]
     idx_tensor = Variable(torch.FloatTensor(idx_tensor)).cuda(gpu)
@@ -221,24 +235,21 @@ if __name__=='__main__':
 
         #train
         model.train()
-        for i, (face, left, right, labels, cont_labels, name) in enumerate(train_loader):
-          #input image
-          face = Variable(face).cuda(gpu)
-          left = Variable(left).cuda(gpu)
-          right = Variable(right).cuda(gpu)
+        for i, (images_gaze, labels_gaze, cont_labels_gaze, name) in enumerate(train_loader):
+          images_gaze = Variable(images_gaze).cuda(gpu)
 
-          #Binned labels (Tensor shape)
-          label_pitch = Variable(labels[:, 0]).cuda(gpu)
-          label_yaw = Variable(labels[:, 1]).cuda(gpu)
+          # Binned labels
+          label_pitch = Variable(labels_gaze[:, 0]).cuda(gpu)
+          label_yaw = Variable(labels_gaze[:, 1]).cuda(gpu)
 
           #Continuous labels
-          label_pitch_cont = Variable(cont_labels[:, 0]).cuda(gpu)
-          label_yaw_cont = Variable(cont_labels[:, 1]).cuda(gpu)
+          label_pitch_cont = Variable(cont_labels_gaze[:, 0]).cuda(gpu)
+          label_yaw_cont = Variable(cont_labels_gaze[:, 1]).cuda(gpu)
 
           #Calculate gaze angular
-          pitch, yaw = model(face, left, right)
+          pitch, yaw = model(images_gaze)
 
-          #Cross Entropy Loss
+          # Cross entropy loss
           loss_pitch = criterion(pitch, label_pitch)
           loss_yaw = criterion(yaw, label_yaw)
 
@@ -248,13 +259,13 @@ if __name__=='__main__':
           pitch_predicted = torch.sum(pitch_predicted * idx_tensor, 1) * 4 - 180
           yaw_predicted = torch.sum(yaw_predicted * idx_tensor, 1) * 4 - 180
 
-          #MSE Loss
-          loss_reg_pitch = reg_criterion(pitch_predicted, label_pitch_cont)
-          loss_reg_yaw = reg_criterion(yaw_predicted, label_yaw_cont)
+          #Huber Loss
+          loss_pitch_reg = reg_criterion(pitch_predicted, label_pitch_cont, reduction='mean', delta=5)
+          loss_yaw_reg = reg_criterion(yaw_predicted, label_yaw_cont, reduction='mean', delta=5)
 
           #Total Loss
-          loss_pitch += alpha * loss_reg_pitch
-          loss_yaw += alpha * loss_reg_yaw
+          loss_pitch += loss_pitch_reg
+          loss_yaw += loss_yaw_reg
           sum_loss_pitch += loss_pitch
           sum_loss_yaw += loss_yaw
 
@@ -276,16 +287,14 @@ if __name__=='__main__':
         avg_error = 0.0
         model.eval()
         with torch.no_grad():
-          for j, (face, left, right, labels, cont_labels, name) in enumerate(val_loader):
-            face = Variable(face).cuda(gpu)
-            left = Variable(left).cuda(gpu)
-            right = Variable(right).cuda(gpu)
+          for j, (images, labels, cont_labels, name) in enumerate(val_loader):
+            images = Variable(images).cuda(gpu)
             total += cont_labels.size(0)
 
             label_pitch = cont_labels[:, 0].float() * np.pi / 180
             label_yaw = cont_labels[:, 1].float() * np.pi / 180
 
-            gaze_pitch, gaze_yaw = model(face, left, right)
+            gaze_pitch, gaze_yaw = model(images)
 
             _, pitch_binpred = torch.max(gaze_pitch.data, 1)
             _, yaw_binpred = torch.max(gaze_yaw.data, 1)
