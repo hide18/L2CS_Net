@@ -49,6 +49,9 @@ def parse_args():
     '--label_dir', dest='label_dir', help='Directory path for gaze360 labels.', default='datasets/Gaze360/Label', type=str
   )
   parser.add_argument(
+    '--snapshot', dest='snapshot', help='Path of pretrained models.', default='', type=str
+  )
+  parser.add_argument(
     '--output', dest='output', help='Path of output models.', default='output/snapshots/', type=str
   )
   parser.add_argument(
