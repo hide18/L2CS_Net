@@ -33,23 +33,24 @@ class GN(nn.Module):
 
     self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
 
-    self.fc_yaw_gaze = nn.Linear(512 * block.expansion * 3, num_bins)
-    self.fc_pitch_gaze = nn.Linear(512 * block.expansion * 3, num_bins)
-
-    '''
-    self.fc_yaw_gaze = nn.Sequential(
-      nn.Linear(512 * block.expansion, 1000),
-      nn.ReLU(inplace=True),
-      nn.Linear(1000, num_bins)
+    self.eyefc = nn.Sequential(
+      nn.Linear(512 * block.expansion, 256),
+      nn.ReLU(inplace=True)
     )
-    self.fc_pitch_gaze = nn.Sequential(
-      nn.Linear(512 * block.expansion, 1000),
+    self.facefc = nn.Sequential(
+      nn.Linear(512 * block.expansion, 256),
       nn.ReLU(inplace=True),
-      nn.Linear(1000, num_bins)
+      nn.Linear(256, 32),
+      nn.ReLU(inplace=True)
     )
-    '''
+    self.fc_yaw_gaze = nn.Linear(256 + 256 + 32, num_bins)
+    self.fc_pitch_gaze = nn.Linear(256 + 256 + 32, num_bins)
 
-    self.fc_finetune = nn.Linear(512 * block.expansion, num_bins)
+
+    #self.fc_yaw_gaze = nn.Linear(512 * block.expansion * 3, num_bins)
+    #self.fc_pitch_gaze = nn.Linear(512 * block.expansion * 3, num_bins)
+
+
 
     for m in self.modules():
       if isinstance(m, nn.Conv2d):
@@ -65,40 +66,40 @@ class GN(nn.Module):
     x1 = self.bn1(x1)
     x1 = self.relu(x1)
     x1 = self.maxpool(x1)
-
     x1 = self.layer1(x1)
     x1 = self.layer2(x1)
     x1 = self.layer3(x1)
     x1 = self.layer4(x1)
     x1 = self.avgpool(x1)
     x1 = x1.view(x1.shape[0], -1)
+    x1 = self.facefc(x1)
     #print(x1.shape)
 
-    #Get Eye Features
+    #Get Eye Featuresfrom tkinter.colorchooser import askcolor
     x2 = self.conv1(x2)
     x2 = self.bn1(x2)
     x2 = self.relu(x2)
     x2 = self.maxpool(x2)
-
     x2 = self.layer1(x2)
     x2 = self.layer2(x2)
     x2 = self.layer3(x2)
     x2 = self.layer4(x2)
     x2 = self.avgpool(x2)
     x2 = x2.view(x2.shape[0], -1)
+    x2 = self.eyefc(x2)
     #print(x2.shape)
 
     x3 = self.conv1(x3)
     x3 = self.bn1(x3)
     x3 = self.relu(x3)
     x3 = self.maxpool(x3)
-
     x3 = self.layer1(x3)
     x3 = self.layer2(x3)
     x3 = self.layer3(x3)
     x3 = self.layer4(x3)
     x3 = self.avgpool(x3)
     x3 = x3.view(x3.shape[0], -1)
+    x3 = self.eyefc(x3)
     #print(x3.shape)
 
     features = torch.cat((x1, x2, x3), 1)
@@ -129,7 +130,7 @@ class GN(nn.Module):
     return nn.Sequential(*layers)
 
 #if you check this network, try to start the code.
-model = GN(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, 90)
+#model = GN(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, 90)
 #y = torch.rand(4, 3, 224, 224)
 #print(model(y)[0].shape)
-summary(model, [(1, 3, 224, 224), (1, 3, 60, 36), (1, 3, 60, 36)])
+#summary(model, [(1, 3, 224, 224), (1, 3, 60, 36), (1, 3, 60, 36)])
