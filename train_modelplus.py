@@ -149,7 +149,7 @@ if __name__=='__main__':
 
 
   if dataset=="gaze360":
-    model, pre_url = getArch_weights(args.arch, 90)
+    model, pre_url = getArch_weights(args.arch, 180)
     if args.snapshot == '':
             load_filtered_state_dict(model, model_zoo.load_url(pre_url))
     else:
@@ -162,7 +162,7 @@ if __name__=='__main__':
 
     #traindata dataloader
     train_label = os.path.join(label_path, "train.label")
-    train_dataset = datasets_plus.Gaze360(train_label, args.image_dir, transformation_face, transformation_eye, 180, 4)
+    train_dataset = datasets_plus.Gaze360(train_label, args.image_dir, transformation_face, transformation_eye, 180, 2)
     train_loader = DataLoader(
       dataset=train_dataset,
       batch_size=int(batch_size),
@@ -173,7 +173,7 @@ if __name__=='__main__':
 
     #validation dataloader
     val_label = os.path.join(label_path, "val.label")
-    val_dataset = datasets_plus.Gaze360(val_label, args.image_dir, transformation_face, transformation_eye, 180, 4, train=False)
+    val_dataset = datasets_plus.Gaze360(val_label, args.image_dir, transformation_face, transformation_eye, 180, 2, train=False)
     val_loader = DataLoader(
       dataset=val_dataset,
       batch_size=int(batch_size),
@@ -207,7 +207,7 @@ if __name__=='__main__':
     ], lr = args.lr)
 
 
-    idx_tensor = [idx for idx in range(90)]
+    idx_tensor = [idx for idx in range(180)]
     idx_tensor = Variable(torch.FloatTensor(idx_tensor)).cuda(gpu)
 
 
@@ -248,8 +248,8 @@ if __name__=='__main__':
           #Predict gaze angular
           pitch_predicted = softmax(pitch)
           yaw_predicted = softmax(yaw)
-          pitch_predicted = torch.sum(pitch_predicted * idx_tensor, 1) * 4 - 180
-          yaw_predicted = torch.sum(yaw_predicted * idx_tensor, 1) * 4 - 180
+          pitch_predicted = torch.sum(pitch_predicted * idx_tensor, 1) * 2 - 180
+          yaw_predicted = torch.sum(yaw_predicted * idx_tensor, 1) * 2 - 180
 
           #MSE Loss
           loss_reg_pitch = reg_criterion(pitch_predicted, label_pitch_cont)
@@ -295,8 +295,8 @@ if __name__=='__main__':
 
             pitch_predicted = softmax(gaze_pitch)
             yaw_predicted = softmax(gaze_yaw)
-            pitch_predicted = torch.sum(pitch_predicted * idx_tensor, 1).cpu() * 4 - 180
-            yaw_predicted = torch.sum(yaw_predicted * idx_tensor, 1).cpu() * 4 - 180
+            pitch_predicted = torch.sum(pitch_predicted * idx_tensor, 1).cpu() * 2 - 180
+            yaw_predicted = torch.sum(yaw_predicted * idx_tensor, 1).cpu() * 2 - 180
 
             pitch_predicted = pitch_predicted * np.pi / 180
             yaw_predicted = yaw_predicted * np.pi / 180
