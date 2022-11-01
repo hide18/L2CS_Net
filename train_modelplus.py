@@ -84,7 +84,7 @@ def get_non_ignored_params(model):
 
 def get_fc_params(model):
   #Generator function that yields fc layer params.
-  b = [model.facefc_pitch, model.face_yaw, model.eyefc_pitch, model.eyefc_yaw, model.fc_yaw_gaze, model.fc_pitch_gaze]
+  b = [model.facefc_pitch, model.facefc_yaw, model.eyefc_pitch, model.eyefc_yaw, model.fc_yaw_gaze, model.fc_pitch_gaze]
   for i in range(len(b)):
     for module_name, module in b[i].named_modules():
       if 'bn' in module_name:
