@@ -33,11 +33,21 @@ class GN(nn.Module):
 
     self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
 
-    self.eyefc = nn.Sequential(
+    self.eyefc_pitch = nn.Sequential(
       nn.Linear(512 * block.expansion, 256),
       nn.ReLU(inplace=True)
     )
-    self.facefc = nn.Sequential(
+    self.facefc_pitch = nn.Sequential(
+      nn.Linear(512 * block.expansion, 256),
+      nn.ReLU(inplace=True),
+      nn.Linear(256, 32),
+      nn.ReLU(inplace=True)
+    )
+    self.eyefc_yaw = nn.Sequential(
+      nn.Linear(512 * block.expansion, 256),
+      nn.ReLU(inplace=True)
+    )
+    self.facefc_yaw = nn.Sequential(
       nn.Linear(512 * block.expansion, 256),
       nn.ReLU(inplace=True),
       nn.Linear(256, 32),
@@ -70,7 +80,6 @@ class GN(nn.Module):
     x1 = self.layer4(x1)
     x1 = self.avgpool(x1)
     x1 = x1.view(x1.shape[0], -1)
-    x1 = self.facefc(x1)
     #print(x1.shape)
 
     #Get Eye Featuresfrom tkinter.colorchooser import askcolor
@@ -84,7 +93,6 @@ class GN(nn.Module):
     x2 = self.layer4(x2)
     x2 = self.avgpool(x2)
     x2 = x2.view(x2.shape[0], -1)
-    x2 = self.eyefc(x2)
     #print(x2.shape)
 
     x3 = self.conv1(x3)
@@ -97,15 +105,27 @@ class GN(nn.Module):
     x3 = self.layer4(x3)
     x3 = self.avgpool(x3)
     x3 = x3.view(x3.shape[0], -1)
-    x3 = self.eyefc(x3)
     #print(x3.shape)
 
-    features = torch.cat((x1, x2, x3), 1)
+    p_x1 = self.facefc_pitch(x1)
+    p_x2 = self.eyefc_pitch(x2)
+    p_x3 = self.eyefc_pitch(x3)
 
-    pre_yaw_gaze = self.fc_yaw_gaze(features)
-    pre_pitch_gaze = self.fc_pitch_gaze(features)
+    y_x1 = self.facefc_yaw(x1)
+    y_x2 = self.eyefc_yaw(x2)
+    y_x3 = self.eyefc_yaw(x3)
 
-    return pre_yaw_gaze, pre_pitch_gaze
+    p_features = torch.cat((p_x1, p_x2, p_x3), 1)
+    y_features = torch.cat((y_x1, y_x2, y_x3), 1)
+
+
+    pre_pitch_gaze = self.fc_pitch_gaze(p_features)
+    pre_yaw_gaze = self.fc_yaw_gaze(p_features)
+
+    pre_pitch_gaze = self.fc_pitch_gaze(y_features)
+    pre_yaw_gaze = self.fc_yaw_gaze(y_features)
+
+    return pre_pitch_gaze, pre_yaw_gaze
 
   def _make_layer(self, block, num_res_blocks, first_conv_out_channels, stride):
     identity_conv = None
@@ -128,7 +148,7 @@ class GN(nn.Module):
     return nn.Sequential(*layers)
 
 #if you check this network, try to start the code.
-model = GN(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, 90)
+#model = GN(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, 90)
 #y = torch.rand(4, 3, 224, 224)
 #print(model(y)[0].shape)
-summary(model, [(1, 3, 224, 224), (1, 3, 60, 36), (1, 3, 60, 36)])
+#summary(model, [(1, 3, 224, 224), (1, 3, 60, 36), (1, 3, 60, 36)])
