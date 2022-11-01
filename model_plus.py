@@ -50,8 +50,6 @@ class GN(nn.Module):
     #self.fc_yaw_gaze = nn.Linear(512 * block.expansion * 3, num_bins)
     #self.fc_pitch_gaze = nn.Linear(512 * block.expansion * 3, num_bins)
 
-
-
     for m in self.modules():
       if isinstance(m, nn.Conv2d):
         nn.init.kaiming_normal_(m.weight, mode="fan_out", nonlinearity="relu")
@@ -130,7 +128,7 @@ class GN(nn.Module):
     return nn.Sequential(*layers)
 
 #if you check this network, try to start the code.
-#model = GN(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, 90)
+model = GN(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, 90)
 #y = torch.rand(4, 3, 224, 224)
 #print(model(y)[0].shape)
-#summary(model, [(1, 3, 224, 224), (1, 3, 60, 36), (1, 3, 60, 36)])
+summary(model, [(1, 3, 224, 224), (1, 3, 60, 36), (1, 3, 60, 36)])
