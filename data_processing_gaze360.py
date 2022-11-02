@@ -6,8 +6,8 @@ import sys
 sys.path.append("../core/")
 import data_processing_core as dpc
 
-root = "/home/sugi/project/L2CS-Net/datasets/Gaze360/"
-out_root = "/home/sugi/project/L2CS-Net/datasets/Gaze360"
+root = "/home/sugi/project/L2CS_Net/datasets/Gaze360/"
+out_root = "/home/sugi/project/L2CS_Net/datasets/Gaze360"
 
 def ImageProcessing_Gaze360():
     msg = sio.loadmat(os.path.join(root, "metadata.mat"))
