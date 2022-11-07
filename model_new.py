@@ -50,7 +50,7 @@ class GC(nn.Module):
     )
     '''
 
-    self.fc_finetune = nn.Linear(512 * block.expansion, num_bins)
+    self.fc_finetune = nn.Linear(512 * block.expansion + 3, 3)
 
     for m in self.modules():
       if isinstance(m, nn.Conv2d):
@@ -76,7 +76,7 @@ class GC(nn.Module):
     pre_yaw_gaze = self.fc_yaw_gaze(x)
     pre_pitch_gaze = self.fc_pitch_gaze(x)
 
-    return pre_yaw_gaze, pre_pitch_gaze
+    return pre_pitch_gaze, pre_yaw_gaze
 
   def _make_layer(self, block, num_res_blocks, first_conv_out_channels, stride):
     identity_conv = None
