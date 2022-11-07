@@ -192,7 +192,7 @@ if __name__=='__main__':
       os.makedirs(valpath)
 
     criterion = nn.CrossEntropyLoss().cuda(gpu)
-    reg_criterion = nn.functional.huber_loss().cuda(gpu)
+    reg_criterion = nn.HuberLoss().cuda(gpu)
     softmax = nn.Softmax(dim=1).cuda(gpu)
 
     #Adam
