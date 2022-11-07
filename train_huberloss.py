@@ -263,8 +263,8 @@ if __name__=='__main__':
           yaw_predicted = torch.sum(yaw_predicted * idx_tensor, 1) * 2 - 180
 
           #Huber Loss
-          loss_pitch_reg = reg_criterion(pitch_predicted, label_pitch_cont, reduction='mean', delta=5)
-          loss_yaw_reg = reg_criterion(yaw_predicted, label_yaw_cont, reduction='mean', delta=5)
+          loss_pitch_reg = reg_criterion(pitch_predicted, label_pitch_cont)
+          loss_yaw_reg = reg_criterion(yaw_predicted, label_yaw_cont)
 
           #Total Loss
           loss_pitch += loss_pitch_reg
