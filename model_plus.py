@@ -39,8 +39,6 @@ class GN(nn.Module):
     )
     self.facefc_pitch = nn.Sequential(
       nn.Linear(512 * block.expansion, 256),
-      nn.ReLU(inplace=True),
-      nn.Linear(256, 32),
       nn.ReLU(inplace=True)
     )
     self.eyefc_yaw = nn.Sequential(
@@ -49,12 +47,10 @@ class GN(nn.Module):
     )
     self.facefc_yaw = nn.Sequential(
       nn.Linear(512 * block.expansion, 256),
-      nn.ReLU(inplace=True),
-      nn.Linear(256, 32),
       nn.ReLU(inplace=True)
     )
-    self.fc_yaw_gaze = nn.Linear(256 + 256 + 32, num_bins)
-    self.fc_pitch_gaze = nn.Linear(256 + 256 + 32, num_bins)
+    self.fc_yaw_gaze = nn.Linear(256 + 256 + 256, num_bins)
+    self.fc_pitch_gaze = nn.Linear(256 + 256 + 256, num_bins)
 
 
     #self.fc_yaw_gaze = nn.Linear(512 * block.expansion * 3, num_bins)
