@@ -17,7 +17,7 @@ import torch.backends.cudnn as cudnn
 from torchsummary import summary
 
 import datasets
-from model_drop import GC_loss
+from model_new import GC
 from utils import gazeto3d, select_device, angular
 
 def parse_args():
@@ -104,19 +104,19 @@ def load_filtered_state_dict(model, snapshot):
 
 def getArch_weights(arch, bins):
   if arch == 'ResNet18':
-    model = GC_loss(torchvision.models.resnet.BasicBlock, [2, 2, 2, 2], 3, bins)
+    model = GC(torchvision.models.resnet.BasicBlock, [2, 2, 2, 2], 3, bins)
     pre_url = 'https://download.pytorch.org/models/resnet18-5c106cde.pth'
   elif arch == 'ResNet34':
-    model = GC_loss(torchvision.models.resnet.BasicBlock, [3, 4, 6, 3], 3, bins)
+    model = GC(torchvision.models.resnet.BasicBlock, [3, 4, 6, 3], 3, bins)
     pre_url = 'https://download.pytorch.org/models/resnet34-333f7ec4.pth'
   elif arch == 'ResNet101':
-    model = GC_loss(torchvision.models.resnet.Botteleneck, [3, 4, 23, 3], 3, bins)
+    model = GC(torchvision.models.resnet.Botteleneck, [3, 4, 23, 3], 3, bins)
     pre_url = 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth'
   elif arch == 'ResNet152':
-    model = GC_loss(torchvision.models.resnet.Botteleneck, [3, 8, 36, 3], 3, bins)
+    model = GC(torchvision.models.resnet.Botteleneck, [3, 8, 36, 3], 3, bins)
     pre_url = 'https://download.pytorch.org/models/resnet152-b121ed2d.pth'
   else:
-    model = GC_loss(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, bins)
+    model = GC(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, bins)
     pre_url = 'https://download.pytorch.org/models/resnet50-19c8e357.pth'
 
   return model, pre_url
@@ -194,6 +194,7 @@ if __name__=='__main__':
     criterion = nn.CrossEntropyLoss().cuda(gpu)
     reg_criterion = nn.MSELoss().cuda(gpu)
     l1_criterion = nn.L1Loss().cuda(gpu)
+    smoothl1_criterion = nn.SmoothL1Loss().cuda(gpu)
     softmax = nn.Softmax(dim=1).cuda(gpu)
 
     #Adam
@@ -267,9 +268,12 @@ if __name__=='__main__':
           loss_reg_pitch = reg_criterion(pitch_predicted, label_pitch_cont)
           loss_reg_yaw = reg_criterion(yaw_predicted, label_yaw_cont)
 
-          #L1 Loss
-          loss_l1_pitch = l1_criterion(pitch_predicted, label_pitch_cont)
-          loss_l1_yaw = l1_criterion(yaw_predicted, label_yaw_cont)
+          #L1 Loss or Smooth L1Loss
+          #loss_l1_pitch = l1_criterion(pitch_predicted, label_pitch_cont)
+          #loss_l1_yaw = l1_criterion(yaw_predicted, label_yaw_cont)
+
+          loss_l1_pitch = smoothl1_criterion(pitch_predicted, label_pitch_cont)
+          loss_l1_yaw = smoothl1_criterion(yaw_predicted, label_yaw_cont)
 
           #Total Loss
           loss_pitch += loss_reg_pitch
