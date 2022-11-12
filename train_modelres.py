@@ -65,7 +65,7 @@ def parse_args():
 
 def get_ignored_params(model):
   #Generator function that yields ignored params.
-  b = [model.conv1, model.bn1]
+  b = [model.face_res.conv1, model.face_res.bn1, model.eye_res.conv1, model.eye_res.bn1]
   for i in range(len(b)):
     for module_name, module in b[i].named_modules():
       if 'bn' in module_name:
