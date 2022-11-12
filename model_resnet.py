@@ -69,5 +69,5 @@ class Res(nn.Module):
     return pre_pitch_gaze, pre_yaw_gaze
 
 
-model = Res(models.resnet50(pretrained=True), 180)
-print(model)
+#model = Res(models.resnet50(pretrained=True), 180)
+#print(model)
