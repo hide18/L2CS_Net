@@ -11,7 +11,7 @@ import torchvision
 from torch.autograd import Variable
 from torch.utils.data import DataLoader
 import torch.utils.model_zoo as model_zoo
-from torchvision import transforms
+from torchvision import transforms, models
 import torch.backends.cudnn as cudnn
 from torchsummary import summary
 
@@ -64,7 +64,7 @@ def parse_args():
 
 def get_ignored_params(model):
   #Generator function that yields ignored params.
-  b = [model.conv1, model.bn1]
+  b = [model.face_res.conv1, model.face_res.bn1, model.eye_res.conv1, model.eye_res.bn1]
   for i in range(len(b)):
     for module_name, module in b[i].named_modules():
       if 'bn' in module_name:
@@ -74,7 +74,7 @@ def get_ignored_params(model):
 
 def get_non_ignored_params(model):
   #Ganerator function that yields params that will be optimized.
-  b = [model.layer1, model.layer2, model.layer3, model.layer4]
+  b = [model.face_res.layer1, model.face_res.layer2, model.face_res.layer3, model.face_res.layer4, model.eye_res.layer1, model.eye_res.layer2, model.eye_res.layer3, model.eye_res.layer4]
   for i in range(len(b)):
     for module_name, module in b[i].named_modules():
       if 'bn' in module_name:
@@ -84,7 +84,7 @@ def get_non_ignored_params(model):
 
 def get_fc_params(model):
   #Generator function that yields fc layer params.
-  b = [model.feature_fc, model.W1, model.W2, model.facefc_pitch, model.facefc_yaw, model.eyefc_pitch, model.eyefc_yaw]
+  b = [model.W1, model.W2, model.facefc_pitch, model.facefc_yaw, model.eyefc_pitch, model.eyefc_yaw]
   for i in range(len(b)):
     for module_name, module in b[i].named_modules():
       if 'bn' in module_name:
@@ -103,22 +103,17 @@ def load_filtered_state_dict(model, snapshot):
 
 def getArch_weights(arch, bins):
   if arch == 'ResNet18':
-    model = AttnNet(torchvision.models.resnet.BasicBlock, [2, 2, 2, 2], 3, bins)
-    pre_url = 'https://download.pytorch.org/models/resnet18-5c106cde.pth'
+    model = AttnNet(models.resnet18(pretrained=True), bins)
   elif arch == 'ResNet34':
-    model = AttnNet(torchvision.models.resnet.BasicBlock, [3, 4, 6, 3], 3, bins)
-    pre_url = 'https://download.pytorch.org/models/resnet34-333f7ec4.pth'
+    model = AttnNet(models.resnet34(pretrained=True), bins)
   elif arch == 'ResNet101':
-    model = AttnNet(torchvision.models.resnet.Botteleneck, [3, 4, 23, 3], 3, bins)
-    pre_url = 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth'
+    model = AttnNet(models.resnet101(pretrained=True), bins)
   elif arch == 'ResNet152':
-    model = AttnNet(torchvision.models.resnet.Botteleneck, [3, 8, 36, 3], 3, bins)
-    pre_url = 'https://download.pytorch.org/models/resnet152-b121ed2d.pth'
+    model = AttnNet(models.resnet152(pretrained=True), bins)
   else:
-    model = AttnNet(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, bins)
-    pre_url = 'https://download.pytorch.org/models/resnet50-19c8e357.pth'
+    model = AttnNet(models.resnet50(pretrained=True), bins)
 
-  return model, pre_url
+  return model
 
 
 
@@ -149,9 +144,9 @@ if __name__=='__main__':
 
 
   if dataset=="gaze360":
-    model, pre_url = getArch_weights(args.arch, 180)
+    model = getArch_weights(args.arch, 180)
     if args.snapshot == '':
-            load_filtered_state_dict(model, model_zoo.load_url(pre_url))
+            model = model
     else:
         saved_state_dict = torch.load(args.snapshot)
         model.load_state_dict(saved_state_dict)
