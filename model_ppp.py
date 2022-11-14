@@ -14,7 +14,7 @@ class Res(nn.Module):
 
     self.in_channels = 64
 
-    self.face_conv = nn.Sequential(OrderedDict([
+    self.face_res = nn.Sequential(OrderedDict([
       ('conv1', nn.Conv2d(image_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)),
       ('bn1', nn.BatchNorm2d(64)),
       ('relu', nn.ReLU(inplace=True)),
@@ -28,7 +28,7 @@ class Res(nn.Module):
 
     self.in_channels = 64
 
-    self.eye_conv = nn.Sequential(OrderedDict([
+    self.eye_res = nn.Sequential(OrderedDict([
       ('conv1', nn.Conv2d(image_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)),
       ('bn1', nn.BatchNorm2d(64)),
       ('relu', nn.ReLU(inplace=True)),
@@ -73,16 +73,16 @@ class Res(nn.Module):
 
   def forward(self, x1, x2, x3):
     #Get Face Features
-    ff = self.face_conv(x1)
+    ff = self.face_res(x1)
     ff = ff.view(ff.shape[0], -1)
     #print(x1.shape)
 
     #Get Eye Featuresfrom tkinter.colorchooser import askcolor
-    lf = self.eye_conv(x2)
+    lf = self.eye_res(x2)
     lf = lf.view(lf.shape[0], -1)
     #print(x2.shape)
 
-    rf = self.eye_conv(x3)
+    rf = self.eye_res(x3)
     rf = rf.view(rf.shape[0], -1)
     #print(x3.shape)
 
@@ -127,8 +127,8 @@ class Res(nn.Module):
     return nn.Sequential(*layers)
 
 #if you check this network, try to start the code.
-model = Res(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, 90)
-print(model)
+#model = Res(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, 90)
+#print(model)
 #y = torch.rand(4, 3, 224, 224)
 #print(model(y)[0].shape)
 #summary(model, [(1, 3, 224, 224), (1, 3, 60, 36), (1, 3, 60, 36)])

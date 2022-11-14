@@ -65,7 +65,7 @@ def parse_args():
 
 def get_ignored_params(model):
   #Generator function that yields ignored params.
-  b = [model.conv1, model.bn1]
+  b = [model.face_res.conv1, model.face_res.bn1, model.eye_res.conv1, model.eye_res.bn1]
   for i in range(len(b)):
     for module_name, module in b[i].named_modules():
       if 'bn' in module_name:
@@ -75,7 +75,7 @@ def get_ignored_params(model):
 
 def get_non_ignored_params(model):
   #Ganerator function that yields params that will be optimized.
-  b = [model.layer1, model.layer2, model.layer3, model.layer4]
+  b = [model.face_res.layer1, model.face_res.layer2, model.face_res.layer3, model.face_res.layer4, model.eye_res.layer1, model.eye_res.layer2, model.eye_res.layer3, model.eye_res.layer4]
   for i in range(len(b)):
     for module_name, module in b[i].named_modules():
       if 'bn' in module_name:
@@ -152,10 +152,14 @@ if __name__=='__main__':
   if dataset=="gaze360":
     model, pre_url = getArch_weights(args.arch, 180)
     if args.snapshot == '':
-            load_filtered_state_dict(model, model_zoo.load_url(pre_url))
+      face = model.face_res
+      eye = model.eye_res
+      load_filtered_state_dict(face, model_zoo.load_url(pre_url))
+      load_filtered_state_dict(eye, model_zoo.load_url(pre_url))
+
     else:
-        saved_state_dict = torch.load(args.snapshot)
-        model.load_state_dict(saved_state_dict)
+      saved_state_dict = torch.load(args.snapshot)
+      model.load_state_dict(saved_state_dict)
     model.cuda(gpu)
     print('Loading data.')
 
@@ -186,7 +190,7 @@ if __name__=='__main__':
     torch.backends.cudnn.benchmark = True
 
     today = datetime.datetime.fromtimestamp(time.time())
-    summary_name = '{}_{}'.format('GN-gaze360', str(today.strftime('%Y-%-m*%-d_%-H*%-M*%-S')))
+    summary_name = '{}_{}'.format('ResNet-gaze360', str(today.strftime('%Y-%-m*%-d_%-H*%-M*%-S')))
 
     output = os.path.join(output, summary_name)
     if not os.path.exists(output):
