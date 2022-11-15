@@ -11,7 +11,16 @@ class VGGGaze(nn.Module):
     super(VGGGaze, self).__init__()
     self.features = self._make_layers(cfg, batch_norm)
     self.avgpool = nn.AdaptiveAvgPool2d((7, 7))
-    self.classifier = nn.Sequential(
+    self.p_classifier = nn.Sequential(
+      nn.Linear(512 * 7 * 7, 4096),
+      nn.ReLU(inplace=True),
+      nn.Dropout(p=0.5),
+      nn.Linear(4096, 4096),
+      nn.ReLU(inplace=True),
+      nn.Dropout(p=0.5),
+      nn.Linear(4096, num_bins),
+    )
+    self.y_classifier = nn.Sequential(
       nn.Linear(512 * 7 * 7, 4096),
       nn.ReLU(inplace=True),
       nn.Dropout(p=0.5),
@@ -27,8 +36,9 @@ class VGGGaze(nn.Module):
     x = self.features(x)
     x = self.avgpool(x)
     x = torch.flatten(x, 1)
-    x = self.classifier(x)
-    return x
+    pitch = self.p_classifier(x)
+    yaw = self.y_classifier(x)
+    return pitch, yaw
 
   def _initialize_weights(self):
     for m in self.modules():

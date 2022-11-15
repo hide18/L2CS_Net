@@ -19,6 +19,8 @@ import datasets
 from model_vgg import VGGGaze
 from utils import gazeto3d, select_device, angular
 
+from itertools import islice
+
 def parse_args():
   parser = argparse.ArgumentParser(description='Gaze estimation using the Gazenet based CNN network.')
   parser.add_argument(
@@ -65,6 +67,7 @@ def parse_args():
 def load_filtered_state_dict(model, snapshot):
   #By user apaszke from discuss.pytorch.org
   model_dict = model.state_dict()
+  #model_dict = {k: v for k, v in model_dict.items() if 'classifier' not in k.lower()}
   snapshot = {k: v for k, v in snapshot.items() if k in model_dict}
   model_dict.update(snapshot)
   model.load_state_dict(model_dict)
@@ -104,7 +107,11 @@ def getArch_weights(arch, bins):
 
   return model, pre_url
 
+def nth_keys(dict,n):
+  it = iter(dict)
+  next(islice(it, n, n), None)
 
+  return next(it)
 
 
 if __name__=='__main__':
@@ -127,21 +134,21 @@ if __name__=='__main__':
 
 
   if dataset=="gaze360":
-    model, pre_url = getArch_weights(args.arch, 90)
+    model, pre_url = getArch_weights(args.arch, 180)
     if args.snapshot == '':
             load_filtered_state_dict(model, model_zoo.load_url(pre_url))
     else:
         saved_state_dict = torch.load(args.snapshot)
         model.load_state_dict(saved_state_dict)
     model.cuda(gpu)
-    summary(model, (3, 448, 448))
+    summary(model, (3, 224, 224))
     print('Loading data.')
 
     label_path = args.label_dir
 
     #traindata dataloader
     train_label = os.path.join(label_path, "train.label")
-    train_dataset = datasets.Gaze360(train_label, args.image_dir, transformations, 180, 4)
+    train_dataset = datasets.Gaze360(train_label, args.image_dir, transformations, 180, 2)
     train_loader = DataLoader(
       dataset=train_dataset,
       batch_size=int(batch_size),
@@ -152,7 +159,7 @@ if __name__=='__main__':
 
     #validation dataloader
     val_label = os.path.join(label_path, "val.label")
-    val_dataset = datasets.Gaze360(val_label, args.image_dir, transformations, 180, 4, train=False)
+    val_dataset = datasets.Gaze360(val_label, args.image_dir, transformations, 180, 2, train=False)
     val_loader = DataLoader(
       dataset=val_dataset,
       batch_size=int(batch_size),
@@ -164,7 +171,7 @@ if __name__=='__main__':
     torch.backends.cudnn.benchmark = True
 
     today = datetime.datetime.fromtimestamp(time.time())
-    summary_name = '{}_{}'.format('GC-gaze360', str(today.strftime('%Y-%-m*%-d_%-H*%-M*%-S')))
+    summary_name = '{}_{}'.format('VGG-gaze360', str(today.strftime('%Y-%-m*%-d_%-H*%-M*%-S')))
 
     output = os.path.join(output, summary_name)
     if not os.path.exists(output):
@@ -179,31 +186,55 @@ if __name__=='__main__':
     reg_criterion = nn.MSELoss().cuda(gpu)
     softmax = nn.Softmax(dim=1).cuda(gpu)
 
+    model_param = model.state_dict()
+    model_features = {k: v for k, v in model_param.items() if 'features' in k.lower()}
+
     #param
     param_to_update_1 = []
     param_to_update_2 = []
     param_to_update_3 = []
+    param_to_update_4 = []
 
-    update_param_names_1 = ['features']
-    update_param_names_2 = ['classifier.0.weight', 'classifier.0.bias', 'classifier.3.weight', 'classifier.3.bias']
-    update_param_names_3 = ['classifier.6.weight', 'classifier.6.bias']
+    if args.arch == 'VGG16':
+      update_param_names_1 = []
+      update_param_names_2 = []
+      for i in range(20):
+        update_param_names_1.append(nth_keys(model_features, i))
+      for j in range(20, 26):
+        update_param_names_2.append(nth_keys(model_features, j))
+    elif args.arch == 'VGG19':
+      update_param_names_1 = []
+      update_param_names_2 = []
+      for i in range(24):
+        update_param_names_1.append(nth_keys(model_features, i))
+      for j in range(24, 32):
+        update_param_names_2.append(nth_keys(model_features, j))
+    else:
+      print("choose other architecture")
+
+    update_param_names_3 = ['p_classifier.0.weight', 'p_classifier.0.bias', 'p_classifier.3.weight', 'p_classifier.3.bias', 'y_classifier.0.weight', 'y_classifier.0.bias', 'y_classifier.3.weight', 'y_classifier.3.bias']
+    update_param_names_4 = ['p_classifier.6.weight', 'p_classifier.6.bias', 'y_classifier.6.weight', 'y_classifier.6.bias']
 
     for name, param in model.named_parameters():
-      if update_param_names_1[0] in name:
-        param.requires_grad = True
-        update_param_names_1.append(param)
+      if name in update_param_names_1:
+        param.requires_grad = False
+        param_to_update_1.append(param)
       elif name in update_param_names_2:
         param.requires_grad = True
-        update_param_names_2.append(param)
+        param_to_update_2.append(param)
       elif name in update_param_names_3:
         param.requires_grad = True
-        update_param_names_3.append(param)
+        param_to_update_3.append(param)
+      elif name in update_param_names_4:
+        param.requires_grad = True
+        param_to_update_4.append(param)
 
     #Adam
     optimizer_gaze = torch.optim.Adam([
-      {'params' : param_to_update_1, 'lr' : args.lr},
-      {'params' : param_to_update_2, 'lr' : args.lr*5},
-      {'params' : param_to_update_3, 'lr' : args.lr*10}
+      {'params' : param_to_update_1, 'lr' : 0},
+      {'params' : param_to_update_2, 'lr' : args.lr},
+      {'params' : param_to_update_3, 'lr' : args.lr},
+      {'params' : param_to_update_4, 'lr' : args.lr*10}
     ], lr = args.lr)
 
     #SGD
@@ -225,7 +256,7 @@ if __name__=='__main__':
     ], lr = args.lr)
     '''
 
-    idx_tensor = [idx for idx in range(90)]
+    idx_tensor = [idx for idx in range(180)]
     idx_tensor = Variable(torch.FloatTensor(idx_tensor)).cuda(gpu)
 
 
@@ -264,8 +295,8 @@ if __name__=='__main__':
           #Predict gaze angular
           pitch_predicted = softmax(pitch)
           yaw_predicted = softmax(yaw)
-          pitch_predicted = torch.sum(pitch_predicted * idx_tensor, 1) * 4 - 180
-          yaw_predicted = torch.sum(yaw_predicted * idx_tensor, 1) * 4 - 180
+          pitch_predicted = torch.sum(pitch_predicted * idx_tensor, 1) * 2 - 180
+          yaw_predicted = torch.sum(yaw_predicted * idx_tensor, 1) * 2 - 180
 
           #MSE Loss
           loss_reg_pitch = reg_criterion(pitch_predicted, label_pitch_cont)
@@ -309,8 +340,8 @@ if __name__=='__main__':
 
             pitch_predicted = softmax(gaze_pitch)
             yaw_predicted = softmax(gaze_yaw)
-            pitch_predicted = torch.sum(pitch_predicted * idx_tensor, 1).cpu() * 4 - 180
-            yaw_predicted = torch.sum(yaw_predicted * idx_tensor, 1).cpu() * 4 - 180
+            pitch_predicted = torch.sum(pitch_predicted * idx_tensor, 1).cpu() * 2 - 180
+            yaw_predicted = torch.sum(yaw_predicted * idx_tensor, 1).cpu() * 2 - 180
 
             pitch_predicted = pitch_predicted * np.pi / 180
             yaw_predicted = yaw_predicted * np.pi / 180
