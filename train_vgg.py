@@ -198,16 +198,16 @@ if __name__=='__main__':
     if args.arch == 'VGG16':
       update_param_names_1 = []
       update_param_names_2 = []
-      for i in range(20):
+      for i in range(4):
         update_param_names_1.append(nth_keys(model_features, i))
-      for j in range(20, 26):
+      for j in range(4, 26):
         update_param_names_2.append(nth_keys(model_features, j))
     elif args.arch == 'VGG19':
       update_param_names_1 = []
       update_param_names_2 = []
-      for i in range(24):
+      for i in range(4):
         update_param_names_1.append(nth_keys(model_features, i))
-      for j in range(24, 32):
+      for j in range(4, 32):
         update_param_names_2.append(nth_keys(model_features, j))
     else:
       print("choose other architecture")
