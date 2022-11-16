@@ -62,11 +62,11 @@ class GResidual(nn.Module):
     #print(x1.shape)
 
     #Get Eye Featuresfrom tkinter.colorchooser import askcolor
-    left = self.eye_res(left)
+    left = self.eye_res(x2)
     left = left.view(left.shape[0], -1)
     #print(x2.shape)
 
-    right = self.eye_res(right)
+    right = self.eye_res(x3)
     right = right.view(right.shape[0], -1)
     #print(x3.shape)
 
