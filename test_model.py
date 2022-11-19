@@ -84,7 +84,7 @@ if __name__ == '__main__':
   ])
 
   if dataset=='gaze360':
-    gaze_dataset = datasets.Gaze360(args.label_dir, args.image_dir, transformation_face, angle, angle*2/bins)
+    gaze_dataset = datasets.Gaze360(args.label_dir, args.image_dir, transformation_face, angle, angle*2/bins, train=False)
     test_loader = torch.utils.data.DataLoader(
       dataset=gaze_dataset,
       batch_size=int(batch_size),
