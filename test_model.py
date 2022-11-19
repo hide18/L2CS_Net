@@ -76,6 +76,7 @@ if __name__ == '__main__':
   snapshot = args.snapshot
   bins = args.bins
   angle = args.angle
+  bin_width = int(angle*2/bins)
 
   transformation_face = transforms.Compose([
     transforms.Resize(448),
@@ -84,7 +85,7 @@ if __name__ == '__main__':
   ])
 
   if dataset=='gaze360':
-    gaze_dataset = datasets.Gaze360(args.label_dir, args.image_dir, transformation_face, angle, angle*2/bins, train=False)
+    gaze_dataset = datasets.Gaze360(args.label_dir, args.image_dir, transformation_face, angle, bin_width, train=False)
     test_loader = torch.utils.data.DataLoader(
       dataset=gaze_dataset,
       batch_size=int(batch_size),
@@ -134,8 +135,8 @@ if __name__ == '__main__':
             pitch = softmax(pitch)
             yaw = softmax(yaw)
 
-            pitch = torch.sum(pitch * idx_tensor, 1).cpu() * angle*2/bins - 180
-            yaw = torch.sum(yaw * idx_tensor, 1).cpu() * angle*2/bins - 180
+            pitch = torch.sum(pitch * idx_tensor, 1).cpu() * bin_width - 180
+            yaw = torch.sum(yaw * idx_tensor, 1).cpu() * bin_width - 180
 
             pitch_predicted = pitch * np.pi / 180
             yaw_predicted = yaw * np.pi / 180
