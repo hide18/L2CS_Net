@@ -6,7 +6,8 @@ import torch
 import torch.nn as nn
 import torchvision
 from torch.autograd import Variable
-from torch.utils.data import transforms
+from torch.utils.data import DataLoader
+from torchvision import transforms
 import torch.backends.cudnn as cudnn
 
 import datasets_plus
