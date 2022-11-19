@@ -10,7 +10,7 @@ from torch.utils.data import DataLoader
 from torchvision import transforms
 import torch.backends.cudnn as cudnn
 
-import datasets_plus
+import datasets
 from utils import select_device, natural_keys, gazeto3d, angular
 from model_new import GC
 
@@ -46,7 +46,7 @@ def parse_args():
     '--bins', default='180', type=int
   )
   parser.add_argument(
-    '--angle', default=180, type=int
+    '--angle', default='180', type=int
   )
   args = parser.parse_args()
   return args
@@ -83,14 +83,8 @@ if __name__ == '__main__':
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
   ])
 
-  transformation_eye = transforms.Compose([
-    transforms.Resize((108, 180)),
-    transforms.ToTensor(),
-    transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
-  ])
-
   if dataset=='gaze360':
-    gaze_dataset = datasets_plus.Gaze360(args.label_dir, args.image_dir, transformation_face, transformation_eye, 180, 2)
+    gaze_dataset = datasets.Gaze360(args.label_dir, args.image_dir, transformation_face, angle, angle*2/bins)
     test_loader = torch.utils.data.DataLoader(
       dataset=gaze_dataset,
       batch_size=int(batch_size),
@@ -117,45 +111,34 @@ if __name__ == '__main__':
       avg_MAE = []
 
       for epochs in folder:
-        model = getArch(arch, 180)
+        model = getArch(arch, bins)
         saved_state_dict = torch.load(os.path.join(snapshot, epochs))
         model.load_state_dict(saved_state_dict)
         model.cuda(gpu)
         model.eval()
         total = 0
-        idx_tensor = [idx for idx in range(180)]
+        idx_tensor = [idx for idx in range(bins)]
         idx_tensor = torch.FloatTensor(idx_tensor).cuda(gpu)
         avg_error = 0.0
 
         with torch.no_grad():
-          for j, (face, left, right, lebls, cont_labels, name) in enumerate(test_loader):
+          for j, (face, lebls, cont_labels, name) in enumerate(test_loader):
             face = Variable(face).cuda(gpu)
-            left = Variable(left).cuda(gpu)
-            right = Variable(right).cuda(gpu)
             total += cont_labels.size(0)
 
             label_pitch = cont_labels[:, 0].float() * np.pi / 180
             label_yaw = cont_labels[:, 1].float() * np.pi / 180
 
-            gb_pitch, gb_yaw, gr_pitch, gr_yaw = model(face, left, right)
+            pitch, yaw = model(face)
 
-            pre_gb_pitch = softmax(gb_pitch)
-            pre_gb_yaw = softmax(gb_yaw)
-            pre_gr_pitch = softmax(gr_pitch)
-            pre_gr_yaw = softmax(gr_yaw)
+            pitch = softmax(pitch)
+            yaw = softmax(yaw)
 
-            pre_gb_pitch = torch.sum(pre_gb_pitch * idx_tensor, 1).cpu() * 2 - 180
-            pre_gb_yaw = torch.sum(pre_gb_yaw * idx_tensor, 1).cpu() * 2 - 180
-            pre_gr_pitch = torch.sum(pre_gr_pitch * idx_tensor, 1).cpu() * 2 - 180
-            pre_gr_yaw = torch.sum(pre_gr_yaw * idx_tensor, 1).cpu() * 2 - 180
+            pitch = torch.sum(pitch * idx_tensor, 1).cpu() * angle*2/bins - 180
+            yaw = torch.sum(yaw * idx_tensor, 1).cpu() * angle*2/bins - 180
 
-            pre_gb_pitch = pre_gb_pitch * np.pi / 180
-            pre_gb_yaw = pre_gb_yaw * np.pi / 180
-            pre_gr_pitch = pre_gr_pitch * np.pi / 180
-            pre_gr_yaw = pre_gr_yaw * np.pi / 180
-
-            pitch_predicted = pre_gb_pitch + pre_gr_pitch
-            yaw_predicted = pre_gb_yaw + pre_gr_yaw
+            pitch_predicted = pitch * np.pi / 180
+            yaw_predicted = yaw * np.pi / 180
 
             for p, y, pl, yl in zip(pitch_predicted, yaw_predicted, label_pitch, label_yaw):
               avg_error += angular(gazeto3d([p, y]), gazeto3d([pl, yl]))
