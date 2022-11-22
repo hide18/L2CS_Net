@@ -55,7 +55,7 @@ class GResidual(nn.Module):
     self.face_yaw = nn.Linear(512 * block.expansion, num_bins)
 
     self.left_pitch = nn.Linear(512 * block.expansion, 512)
-    self.left_yaw = nn.Linear(512 * block.expansion * 2, 512)
+    self.left_yaw = nn.Linear(512 * block.expansion, 512)
 
     self.right_pitch = nn.Linear(512 * block.expansion, 512)
     self.right_yaw = nn.Linear(512 * block.expansion, 512)
@@ -79,12 +79,12 @@ class GResidual(nn.Module):
     y_face = self.face_yaw(face)
 
     #Get Eye Features
-    left = self.eye_res(x2)
+    left = self.left_res(x2)
     left = left.view(left.shape[0], -1)
     p_left = self.left_pitch(left)
     y_left = self.left_yaw(left)
 
-    right = self.eye_res(x3)
+    right = self.right_res(x3)
     right = right.view(right.shape[0], -1)
     p_right = self.right_pitch(right)
     y_right = self.right_yaw(right)
