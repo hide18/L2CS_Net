@@ -7,9 +7,9 @@ import math
 import torch.nn.functional as F
 from torchinfo import summary
 
-class GC(nn.Module):
+class Face(nn.Module):
   def __init__(self, block, layers, image_channels, num_bins):
-    super(GC, self).__init__()
+    super(Face, self).__init__()
 
     self.in_channels = 64
 
@@ -36,19 +36,6 @@ class GC(nn.Module):
     #new model plus the fc layer
     self.fc_yaw_gaze = nn.Linear(512 * block.expansion, num_bins)
     self.fc_pitch_gaze = nn.Linear(512 * block.expansion, num_bins)
-
-    '''
-    self.fc_yaw_gaze = nn.Sequential(
-      nn.Linear(512 * block.expansion, 1000),
-      nn.ReLU(inplace=True),
-      nn.Linear(1000, num_bins)
-    )
-    self.fc_pitch_gaze = nn.Sequential(
-      nn.Linear(512 * block.expansion, 1000),
-      nn.ReLU(inplace=True),
-      nn.Linear(1000, num_bins)
-    )
-    '''
 
     for m in self.modules():
       if isinstance(m, nn.Conv2d):

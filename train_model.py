@@ -16,7 +16,7 @@ import torch.backends.cudnn as cudnn
 from torchsummary import summary
 
 import datasets
-from model_new import GC
+from model_new import Face
 from utils import gazeto3d, select_device, angular
 
 def parse_args():
@@ -103,19 +103,19 @@ def load_filtered_state_dict(model, snapshot):
 
 def getArch_weights(arch, bins):
   if arch == 'ResNet18':
-    model = GC(torchvision.models.resnet.BasicBlock, [2, 2, 2, 2], 3, bins)
+    model = Face(torchvision.models.resnet.BasicBlock, [2, 2, 2, 2], 3, bins)
     pre_url = 'https://download.pytorch.org/models/resnet18-5c106cde.pth'
   elif arch == 'ResNet34':
-    model = GC(torchvision.models.resnet.BasicBlock, [3, 4, 6, 3], 3, bins)
+    model = Face(torchvision.models.resnet.BasicBlock, [3, 4, 6, 3], 3, bins)
     pre_url = 'https://download.pytorch.org/models/resnet34-333f7ec4.pth'
   elif arch == 'ResNet101':
-    model = GC(torchvision.models.resnet.Botteleneck, [3, 4, 23, 3], 3, bins)
+    model = Face(torchvision.models.resnet.Botteleneck, [3, 4, 23, 3], 3, bins)
     pre_url = 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth'
   elif arch == 'ResNet152':
-    model = GC(torchvision.models.resnet.Botteleneck, [3, 8, 36, 3], 3, bins)
+    model = Face(torchvision.models.resnet.Botteleneck, [3, 8, 36, 3], 3, bins)
     pre_url = 'https://download.pytorch.org/models/resnet152-b121ed2d.pth'
   else:
-    model = GC(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, bins)
+    model = Face(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, bins)
     pre_url = 'https://download.pytorch.org/models/resnet50-19c8e357.pth'
 
   return model, pre_url
@@ -143,12 +143,12 @@ if __name__=='__main__':
 
 
   if dataset=="gaze360":
-    model, pre_url = getArch_weights(args.arch, 90)
+    model, pre_url = getArch_weights(args.arch, 180)
     if args.snapshot == '':
-            load_filtered_state_dict(model, model_zoo.load_url(pre_url))
+      load_filtered_state_dict(model, model_zoo.load_url(pre_url))
     else:
-        saved_state_dict = torch.load(args.snapshot)
-        model.load_state_dict(saved_state_dict)
+      saved_state_dict = torch.load(args.snapshot)
+      model.load_state_dict(saved_state_dict)
     model.cuda(gpu)
     summary(model, (3, 448, 448))
     print('Loading data.')
@@ -157,7 +157,7 @@ if __name__=='__main__':
 
     #traindata dataloader
     train_label = os.path.join(label_path, "train.label")
-    train_dataset = datasets.Gaze360(train_label, args.image_dir, transformations, 180, 4)
+    train_dataset = datasets.Gaze360(train_label, args.image_dir, transformations, 180, 2)
     train_loader = DataLoader(
       dataset=train_dataset,
       batch_size=int(batch_size),
@@ -168,7 +168,7 @@ if __name__=='__main__':
 
     #validation dataloader
     val_label = os.path.join(label_path, "val.label")
-    val_dataset = datasets.Gaze360(val_label, args.image_dir, transformations, 180, 4, train=False)
+    val_dataset = datasets.Gaze360(val_label, args.image_dir, transformations, 180, 2, train=False)
     val_loader = DataLoader(
       dataset=val_dataset,
       batch_size=int(batch_size),
@@ -180,7 +180,7 @@ if __name__=='__main__':
     torch.backends.cudnn.benchmark = True
 
     today = datetime.datetime.fromtimestamp(time.time())
-    summary_name = '{}_{}'.format('GC-gaze360', str(today.strftime('%Y-%-m*%-d_%-H*%-M*%-S')))
+    summary_name = '{}_{}'.format('Face-gaze360', str(today.strftime('%Y-%-m*%-d_%-H*%-M*%-S')))
 
     output = os.path.join(output, summary_name)
     if not os.path.exists(output):
@@ -193,6 +193,7 @@ if __name__=='__main__':
 
     criterion = nn.CrossEntropyLoss().cuda(gpu)
     reg_criterion = nn.MSELoss().cuda(gpu)
+    l1_loss = nn.L1Loss().cuda(gpu)
     softmax = nn.Softmax(dim=1).cuda(gpu)
 
     #Adam
@@ -221,7 +222,7 @@ if __name__=='__main__':
     ], lr = args.lr)
     '''
 
-    idx_tensor = [idx for idx in range(90)]
+    idx_tensor = [idx for idx in range(180)]
     idx_tensor = Variable(torch.FloatTensor(idx_tensor)).cuda(gpu)
 
 
@@ -241,7 +242,6 @@ if __name__=='__main__':
         for i, (images_gaze, labels_gaze, cont_labels_gaze, name) in enumerate(train_loader):
           images_gaze = Variable(images_gaze).cuda(gpu)
 
-
           #Binned labels (Tensor shape)
           label_pitch = Variable(labels_gaze[:, 0]).cuda(gpu)
           label_yaw = Variable(labels_gaze[:, 1]).cuda(gpu)
@@ -253,6 +253,7 @@ if __name__=='__main__':
           #Calculate gaze angular
           pitch, yaw = model(images_gaze)
 
+          '''
           #Cross Entropy Loss
           loss_pitch = criterion(pitch, label_pitch)
           loss_yaw = criterion(yaw, label_yaw)
@@ -260,8 +261,8 @@ if __name__=='__main__':
           #Predict gaze angular
           pitch_predicted = softmax(pitch)
           yaw_predicted = softmax(yaw)
-          pitch_predicted = torch.sum(pitch_predicted * idx_tensor, 1) * 4 - 180
-          yaw_predicted = torch.sum(yaw_predicted * idx_tensor, 1) * 4 - 180
+          pitch_predicted = torch.sum(pitch_predicted * idx_tensor, 1) * 2 - 180
+          yaw_predicted = torch.sum(yaw_predicted * idx_tensor, 1) * 2 - 180
 
           #MSE Loss
           loss_reg_pitch = reg_criterion(pitch_predicted, label_pitch_cont)
@@ -270,6 +271,19 @@ if __name__=='__main__':
           #Total Loss
           loss_pitch += alpha * loss_reg_pitch
           loss_yaw += alpha * loss_reg_yaw
+          sum_loss_pitch += loss_pitch
+          sum_loss_yaw += loss_yaw
+          '''
+
+          #l1 loss
+          pitch = softmax(pitch)
+          yaw = softmax(yaw)
+          pitch = torch.sum(pitch * idx_tensor, 1) * 2 - 180
+          yaw = torch.sum(yaw * idx_tensor, 1) * 2 - 180
+
+          loss_pitch = l1_loss(pitch, label_pitch_cont)
+          loss_yaw = l1_loss(yaw, label_yaw_cont)
+
           sum_loss_pitch += loss_pitch
           sum_loss_yaw += loss_yaw
 
@@ -305,8 +319,8 @@ if __name__=='__main__':
 
             pitch_predicted = softmax(gaze_pitch)
             yaw_predicted = softmax(gaze_yaw)
-            pitch_predicted = torch.sum(pitch_predicted * idx_tensor, 1).cpu() * 4 - 180
-            yaw_predicted = torch.sum(yaw_predicted * idx_tensor, 1).cpu() * 4 - 180
+            pitch_predicted = torch.sum(pitch_predicted * idx_tensor, 1).cpu() * 2 - 180
+            yaw_predicted = torch.sum(yaw_predicted * idx_tensor, 1).cpu() * 2 - 180
 
             pitch_predicted = pitch_predicted * np.pi / 180
             yaw_predicted = yaw_predicted * np.pi / 180
