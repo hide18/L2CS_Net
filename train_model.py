@@ -281,8 +281,8 @@ if __name__=='__main__':
           pitch = torch.sum(pitch * idx_tensor, 1) * 2 - 180
           yaw = torch.sum(yaw * idx_tensor, 1) * 2 - 180
 
-          loss_pitch = l1_loss(pitch, label_pitch_cont)
-          loss_yaw = l1_loss(yaw, label_yaw_cont)
+          loss_pitch = reg_criterion(pitch, label_pitch_cont)
+          loss_yaw = reg_criterion(yaw, label_yaw_cont)
 
           sum_loss_pitch += loss_pitch
           sum_loss_yaw += loss_yaw
