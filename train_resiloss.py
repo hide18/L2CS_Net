@@ -85,9 +85,19 @@ def get_non_ignored_params(model):
       for name, param in module.named_parameters():
         yield param
 
-def get_fc_params(model):
+def get_facefc_params(model):
   #Generator function that yields fc layer params.
-  b = [model.face_pitch, model.face_yaw, model.eye_pitch, model.eye_yaw]
+  b = [model.face_pitch, model.face_yaw]
+  for i in range(len(b)):
+    for module_name, module in b[i].named_modules():
+      if 'bn' in module_name:
+        module.eval()
+      for name, param in module.named_parameters():
+        yield param
+
+def get_eyefc_params(model):
+  #Generator function that yields fc layer params.
+  b = [model.eye_pitch, model.eye_yaw]
   for i in range(len(b)):
     for module_name, module in b[i].named_modules():
       if 'bn' in module_name:
@@ -213,7 +223,8 @@ if __name__=='__main__':
       {'params' : get_ignored_params(model.eye_res), 'lr' : 0},
       {'params' : get_non_ignored_params(model.face_res), 'lr' : args.lr},
       {'params' : get_non_ignored_params(model.eye_res), 'lr' : args.lr},
-      {'params' : get_fc_params(model), 'lr' : args.lr}
+      {'params' : get_facefc_params(model), 'lr' : args.lr},
+      {'params' : get_eyefc_params(model), 'lr' : args.lr}
     ], lr = args.lr)
 
 
@@ -230,7 +241,9 @@ if __name__=='__main__':
     with open(os.path.join(valpath, dataset+".log"), 'w') as outfile:
       outfile.write(configuration)
       for epoch in range(num_epochs):
-        sum_loss_pitch = sum_loss_yaw = iter_gaze = 0
+        sum_loss_pitch = 0
+        sum_loss_yaw = 0
+        iter_gaze = 0
 
         #train
         model.train()
@@ -249,7 +262,7 @@ if __name__=='__main__':
           label_yaw_cont = Variable(cont_labels[:, 1]).cuda(gpu)
 
           #Calculate gaze angular
-          face_picth, face_yaw, eyes_pitch, eyeys_yaw = model(face, left, right)
+          face_picth, face_yaw, eyes_pitch, eyes_yaw = model(face, left, right)
 
           #Cross Entropy for faceres
           f_loss_pitch = criterion(face_picth, label_pitch)
@@ -259,7 +272,7 @@ if __name__=='__main__':
           pre_gb_pitch = softmax(face_picth)
           pre_gb_yaw = softmax(face_yaw)
           pre_gr_pitch = softmax(eyes_pitch)
-          pre_gr_yaw = softmax(eyeys_yaw)
+          pre_gr_yaw = softmax(eyes_yaw)
 
           pre_gb_pitch = torch.sum(pre_gb_pitch * idx_tensor, 1) * 2 - 180
           pre_gb_yaw = torch.sum(pre_gb_yaw * idx_tensor, 1) * 2 - 180
@@ -288,7 +301,7 @@ if __name__=='__main__':
           e_loss_pitch = loss_gb_pitch + beta * loss_g_pitch
           e_loss_yaw = loss_gb_yaw + beta * loss_g_yaw
 
-          sun_loss_pitch = f_loss_pitch + e_loss_pitch
+          sum_loss_pitch = f_loss_pitch + e_loss_pitch
           sum_loss_yaw = f_loss_yaw + e_loss_yaw
 
           loss_seq = [f_loss_pitch, f_loss_yaw, e_loss_pitch, e_loss_yaw]
