@@ -156,7 +156,7 @@ if __name__=='__main__':
   ])
 
   transformation_eye = transforms.Compose([
-    transforms.Resize((108, 180)),
+    transforms.Resize((72, 120)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
   ])
@@ -301,8 +301,11 @@ if __name__=='__main__':
           e_loss_pitch = loss_gb_pitch + beta * loss_g_pitch
           e_loss_yaw = loss_gb_yaw + beta * loss_g_yaw
 
-          sum_loss_pitch = f_loss_pitch + e_loss_pitch
-          sum_loss_yaw = f_loss_yaw + e_loss_yaw
+          loss_pitch = f_loss_pitch + e_loss_pitch
+          loss_yaw = f_loss_yaw + e_loss_yaw
+
+          sum_loss_pitch += loss_pitch
+          sum_loss_yaw += loss_yaw
 
           loss_seq = [f_loss_pitch, f_loss_yaw, e_loss_pitch, e_loss_yaw]
           grad_seq = [torch.tensor(1.0).cuda(gpu) for _ in range(len(loss_seq))]
