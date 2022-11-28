@@ -97,7 +97,7 @@ def get_facefc_params(model):
 
 def get_eyesfc_params(model):
   #Generator function that yields fc layer params.
-  b = [model.left_pitch, model.left_yaw, model.right_picth, model.right_yaw]
+  b = [model.left_pitch, model.left_yaw, model.right_pitch, model.right_yaw]
   for i in range(len(b)):
     for module_name, module in b[i].named_modules():
       if 'bn' in module_name:
