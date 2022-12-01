@@ -262,7 +262,6 @@ if __name__=='__main__':
         iter_gaze += 1
 
         if (i+1) % 100 == 0:
-          print(sum_loss_pitch)
           print('Epoch [%d/%d], Iter [%d/%d], Losses : Gaze Pitch %.4f, Gaze Yaw %.4f' %
           (epoch+1, num_epochs, i+1, len(train_dataset)//batch_size, sum_loss_pitch/iter_gaze, sum_loss_yaw/iter_gaze)
           )
