@@ -142,7 +142,7 @@ if __name__=='__main__':
   ])
 
   transformation_eye = transforms.Compose([
-    transforms.Resize((108, 180)),
+    transforms.Resize((72, 120)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
   ])
@@ -265,7 +265,6 @@ if __name__=='__main__':
           #Loss
           loss_gb_pitch = l1_loss(pre_gb_pitch, label_pitch_cont)
           loss_gb_yaw = l1_loss(pre_gb_yaw, label_yaw_cont)
-
           loss_g_pitch = l1_loss(pre_pitch, label_pitch_cont)
           loss_g_yaw = l1_loss(pre_yaw, label_yaw_cont)
 
