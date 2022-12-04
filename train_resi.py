@@ -248,29 +248,29 @@ if __name__=='__main__':
           face_picth, face_yaw, eyes_pitch, eyeys_yaw = model(face, left, right)
 
           #Predict gaze angular
-          pre_gb_pitch = softmax(face_picth)
-          pre_gb_yaw = softmax(face_yaw)
+          pre_gc_pitch = softmax(face_picth)
+          pre_gc_yaw = softmax(face_yaw)
           pre_gr_pitch = softmax(eyes_pitch)
           pre_gr_yaw = softmax(eyeys_yaw)
 
-          pre_gb_pitch = torch.sum(pre_gb_pitch * idx_tensor, 1) * 2 - 180
-          pre_gb_yaw = torch.sum(pre_gb_yaw * idx_tensor, 1) * 2 - 180
-          pre_gr_pitch = torch.sum(pre_gr_pitch * idx_tensor, 1) * 0.2 - 18
-          pre_gr_yaw = torch.sum(pre_gr_yaw * idx_tensor, 1) * 0.2 - 18
+          pre_gc_pitch = torch.sum(pre_gc_pitch * idx_tensor, 1) * 2 - 180
+          pre_gc_yaw = torch.sum(pre_gc_yaw * idx_tensor, 1) * 2 - 180
+          pre_gr_pitch = torch.sum(pre_gr_pitch * idx_tensor, 1) * 0.1 - 9
+          pre_gr_yaw = torch.sum(pre_gr_yaw * idx_tensor, 1) * 0.1 - 9
 
           #Gaze
-          pre_pitch = pre_gb_pitch + pre_gr_pitch
-          pre_yaw = pre_gb_yaw + pre_gr_yaw
+          pre_pitch = pre_gc_pitch + pre_gr_pitch
+          pre_yaw = pre_gc_yaw + pre_gr_yaw
 
           #Loss
-          loss_gb_pitch = l1_loss(pre_gb_pitch, label_pitch_cont)
-          loss_gb_yaw = l1_loss(pre_gb_yaw, label_yaw_cont)
+          loss_gc_pitch = l1_loss(pre_gc_pitch, label_pitch_cont)
+          loss_gc_yaw = l1_loss(pre_gc_yaw, label_yaw_cont)
           loss_g_pitch = l1_loss(pre_pitch, label_pitch_cont)
           loss_g_yaw = l1_loss(pre_yaw, label_yaw_cont)
 
           #Total Loss
-          loss_pitch = loss_gb_pitch + alpha * loss_g_pitch
-          loss_yaw = loss_gb_yaw + alpha * loss_g_yaw
+          loss_pitch = loss_gc_pitch + alpha * loss_g_pitch
+          loss_yaw = loss_gc_yaw + alpha * loss_g_yaw
 
           sum_loss_pitch += loss_pitch
           sum_loss_yaw += loss_yaw
@@ -302,26 +302,26 @@ if __name__=='__main__':
             label_pitch = cont_labels[:, 0].float() * np.pi / 180
             label_yaw = cont_labels[:, 1].float() * np.pi / 180
 
-            gb_pitch, gb_yaw, gr_pitch, gr_yaw = model(face, left, right)
+            gc_pitch, gc_yaw, gr_pitch, gr_yaw = model(face, left, right)
 
 
-            pre_gb_pitch = softmax(gb_pitch)
-            pre_gb_yaw = softmax(gb_yaw)
+            pre_gc_pitch = softmax(gc_pitch)
+            pre_gc_yaw = softmax(gc_yaw)
             pre_gr_pitch = softmax(gr_pitch)
             pre_gr_yaw = softmax(gr_yaw)
 
-            pre_gb_pitch = torch.sum(pre_gb_pitch * idx_tensor, 1).cpu() * 2 - 180
-            pre_gb_yaw = torch.sum(pre_gb_yaw * idx_tensor, 1).cpu() * 2 - 180
-            pre_gr_pitch = torch.sum(pre_gr_pitch * idx_tensor, 1).cpu() * 0.2 - 18
-            pre_gr_yaw = torch.sum(pre_gr_yaw * idx_tensor, 1).cpu() * 0.2 - 18
+            pre_gc_pitch = torch.sum(pre_gc_pitch * idx_tensor, 1).cpu() * 2 - 180
+            pre_gc_yaw = torch.sum(pre_gc_yaw * idx_tensor, 1).cpu() * 2 - 180
+            pre_gr_pitch = torch.sum(pre_gr_pitch * idx_tensor, 1).cpu() * 0.1 - 9
+            pre_gr_yaw = torch.sum(pre_gr_yaw * idx_tensor, 1).cpu() * 0.1 - 9
 
-            pre_gb_pitch = pre_gb_pitch * np.pi / 180
-            pre_gb_yaw = pre_gb_yaw * np.pi / 180
+            pre_gc_pitch = pre_gc_pitch * np.pi / 180
+            pre_gc_yaw = pre_gc_yaw * np.pi / 180
             pre_gr_pitch = pre_gr_pitch * np.pi / 180
             pre_gr_yaw = pre_gr_yaw * np.pi / 180
 
-            pitch_predicted = pre_gb_pitch + pre_gr_pitch
-            yaw_predicted = pre_gb_yaw + pre_gr_yaw
+            pitch_predicted = pre_gc_pitch + pre_gr_pitch
+            yaw_predicted = pre_gc_yaw + pre_gr_yaw
 
             for p, y, pl, yl in zip(pitch_predicted, yaw_predicted, label_pitch, label_yaw):
               avg_error += angular(gazeto3d([p, y]), gazeto3d([pl, yl]))
