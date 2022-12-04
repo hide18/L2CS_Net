@@ -84,7 +84,7 @@ if __name__ == '__main__':
   ])
 
   transformation_eye = transforms.Compose([
-    transforms.Resize((108, 180)),
+    transforms.Resize((72, 120)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
   ])
@@ -137,25 +137,23 @@ if __name__ == '__main__':
             label_pitch = cont_labels[:, 0].float() * np.pi / 180
             label_yaw = cont_labels[:, 1].float() * np.pi / 180
 
-            gb_pitch, gb_yaw, gr_pitch, gr_yaw = model(face, left, right)
+            gc_pitch, gc_yaw, gr_pitch, gr_yaw = model(face, left, right)
 
-            pre_gb_pitch = softmax(gb_pitch)
-            pre_gb_yaw = softmax(gb_yaw)
+            pre_gc_pitch = softmax(gc_pitch)
+            pre_gc_yaw = softmax(gc_yaw)
             pre_gr_pitch = softmax(gr_pitch)
             pre_gr_yaw = softmax(gr_yaw)
 
-            pre_gb_pitch = torch.sum(pre_gb_pitch * idx_tensor, 1).cpu() * 2 - 180
-            pre_gb_yaw = torch.sum(pre_gb_yaw * idx_tensor, 1).cpu() * 2 - 180
+            pre_gc_pitch = torch.sum(pre_gc_pitch * idx_tensor, 1).cpu() * 2 - 180
+            pre_gc_yaw = torch.sum(pre_gc_yaw * idx_tensor, 1).cpu() * 2 - 180
             pre_gr_pitch = torch.sum(pre_gr_pitch * idx_tensor, 1).cpu() * 2 - 180
             pre_gr_yaw = torch.sum(pre_gr_yaw * idx_tensor, 1).cpu() * 2 - 180
 
-            pre_gb_pitch = pre_gb_pitch * np.pi / 180
-            pre_gb_yaw = pre_gb_yaw * np.pi / 180
-            pre_gr_pitch = pre_gr_pitch * np.pi / 180
-            pre_gr_yaw = pre_gr_yaw * np.pi / 180
-
-            pitch_predicted = pre_gb_pitch + pre_gr_pitch
-            yaw_predicted = pre_gb_yaw + pre_gr_yaw
+            pre_pitch = pre_gc_pitch + pre_gr_pitch
+            pre_yaw = pre_gc_yaw + pre_gr_yaw
+            
+            pitch_predicted = pre_pitch * np.pi / 180
+            yaw_predicted = pre_yaw * np.pi / 180
 
             for p, y, pl, yl in zip(pitch_predicted, yaw_predicted, label_pitch, label_yaw):
               avg_error += angular(gazeto3d([p, y]), gazeto3d([pl, yl]))
