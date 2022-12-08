@@ -288,18 +288,16 @@ if __name__=='__main__':
           f_loss_gb_yaw = reg_criterion(pre_gb_yaw, label_yaw_cont)
 
           #l1 for eyeres
-          loss_gb_pitch = l1_loss(pre_gb_pitch, label_pitch_cont)
-          loss_gb_yaw = l1_loss(pre_gb_yaw, label_yaw_cont)
-          loss_g_pitch = l1_loss(pre_pitch, label_pitch_cont)
-          loss_g_yaw = l1_loss(pre_yaw, label_yaw_cont)
+          loss_g_pitch = reg_criterion(pre_pitch, label_pitch_cont)
+          loss_g_yaw = reg_criterion(pre_yaw, label_yaw_cont)
 
           #Loss for faceres
           f_loss_pitch += alpha * f_loss_gb_pitch
           f_loss_yaw += alpha * f_loss_gb_yaw
 
           #Loss for eyeres
-          e_loss_pitch = loss_gb_pitch + beta * loss_g_pitch
-          e_loss_yaw = loss_gb_yaw + beta * loss_g_yaw
+          e_loss_pitch = loss_g_pitch
+          e_loss_yaw = loss_g_yaw
 
           loss_pitch = f_loss_pitch + e_loss_pitch
           loss_yaw = f_loss_yaw + e_loss_yaw
