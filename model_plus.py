@@ -6,51 +6,41 @@ import numpy as np
 import math
 import torch.nn.functional as F
 from torchinfo import summary
+from collections import OrderedDict
 
-class GN(nn.Module):
+class Gaze3inputs(nn.Module):
   def __init__(self, block, layers, image_channels, num_bins):
-    super(GN, self).__init__()
+    super(Gaze3inputs, self).__init__()
 
     self.in_channels = 64
+    self.face_res = nn.Sequential(OrderedDict([
+      ('conv1', nn.Conv2d(image_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)),
+      ('bn1', nn.BatchNorm2d(64)),
+      ('relu', nn.ReLU(inplace=True)),
+      ('maxppol', nn.MaxPool2d(kernel_size=3, stride=2, padding=1)),
+      ('layer1', self._make_layer(block, layers[0], first_conv_out_channels=64, stride=1)),
+      ('layer2', self._make_layer(block, layers[1], first_conv_out_channels=128, stride=2)),
+      ('layer3', self._make_layer(block, layers[2], first_conv_out_channels=256, stride=2)),
+      ('layer4', self._make_layer(block, layers[3], first_conv_out_channels=512, stride=2)),
+      ('avgpool', nn.AdaptiveAvgPool2d((1, 1)))
+    ]))
 
-    self.conv1 = nn.Conv2d(image_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)
-    self.bn1 = nn.BatchNorm2d(64)
-    self.relu =nn.ReLU(inplace=True)
-    self.maxpool = nn.MaxPool2d(kernel_size=3, stride=2, padding=1)
+    self.in_channels = 64
+    self.eye_res = nn.Sequential(OrderedDict([
+      ('conv1', nn.Conv2d(image_channels, 64, kernel_size=7, stride=2, padding=3, bias=False)),
+      ('bn1', nn.BatchNorm2d(64)),
+      ('relu', nn.ReLU(inplace=True)),
+      ('maxppol', nn.MaxPool2d(kernel_size=3, stride=2, padding=1)),
+      ('layer1', self._make_layer(block, layers[0], first_conv_out_channels=64, stride=1)),
+      ('layer2', self._make_layer(block, layers[1], first_conv_out_channels=128, stride=2)),
+      ('layer3', self._make_layer(block, layers[2], first_conv_out_channels=256, stride=2)),
+      ('layer4', self._make_layer(block, layers[3], first_conv_out_channels=512, stride=2)),
+      ('avgpool', nn.AdaptiveAvgPool2d((1, 1)))
+    ]))
 
-    self.layer1 = self._make_layer(
-      block, layers[0], first_conv_out_channels=64, stride=1
-    )
-    self.layer2 = self._make_layer(
-      block, layers[1], first_conv_out_channels=128, stride=2
-    )
-    self.layer3 = self._make_layer(
-      block, layers[2], first_conv_out_channels=256, stride=2
-    )
-    self.layer4 = self._make_layer(
-      block, layers[3], first_conv_out_channels=512, stride=2
-    )
+    self.pitch_fc = nn.Linear(512 * block.expansion * 3, num_bins)
+    self.yaw_fc = nn.Linear(512 * block.expansion * 3, num_bins)
 
-    self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
-
-    self.eyefc_pitch = nn.Sequential(
-      nn.Linear(512 * block.expansion, 256),
-      nn.ReLU(inplace=True)
-    )
-    self.facefc_pitch = nn.Sequential(
-      nn.Linear(512 * block.expansion, 256),
-      nn.ReLU(inplace=True)
-    )
-    self.eyefc_yaw = nn.Sequential(
-      nn.Linear(512 * block.expansion, 256),
-      nn.ReLU(inplace=True)
-    )
-    self.facefc_yaw = nn.Sequential(
-      nn.Linear(512 * block.expansion, 256),
-      nn.ReLU(inplace=True)
-    )
-    self.fc_yaw_gaze = nn.Linear(256 + 256 + 256, num_bins)
-    self.fc_pitch_gaze = nn.Linear(256 + 256 + 256, num_bins)
 
 
     #self.fc_yaw_gaze = nn.Linear(512 * block.expansion * 3, num_bins)
@@ -66,60 +56,22 @@ class GN(nn.Module):
 
   def forward(self, x1, x2, x3):
     #Get Face Features
-    x1 = self.conv1(x1)
-    x1 = self.bn1(x1)
-    x1 = self.relu(x1)
-    x1 = self.maxpool(x1)
-    x1 = self.layer1(x1)
-    x1 = self.layer2(x1)
-    x1 = self.layer3(x1)
-    x1 = self.layer4(x1)
-    x1 = self.avgpool(x1)
-    x1 = x1.view(x1.shape[0], -1)
-    #print(x1.shape)
+    face = self.face_res(x1)
+    face = face.view(face.shape[0], -1)
 
     #Get Eye Featuresfrom tkinter.colorchooser import askcolor
-    x2 = self.conv1(x2)
-    x2 = self.bn1(x2)
-    x2 = self.relu(x2)
-    x2 = self.maxpool(x2)
-    x2 = self.layer1(x2)
-    x2 = self.layer2(x2)
-    x2 = self.layer3(x2)
-    x2 = self.layer4(x2)
-    x2 = self.avgpool(x2)
-    x2 = x2.view(x2.shape[0], -1)
-    #print(x2.shape)
+    left = self.eye_res(x2)
+    left = left.view(left.shape[0], -1)
 
-    x3 = self.conv1(x3)
-    x3 = self.bn1(x3)
-    x3 = self.relu(x3)
-    x3 = self.maxpool(x3)
-    x3 = self.layer1(x3)
-    x3 = self.layer2(x3)
-    x3 = self.layer3(x3)
-    x3 = self.layer4(x3)
-    x3 = self.avgpool(x3)
-    x3 = x3.view(x3.shape[0], -1)
-    #print(x3.shape)
+    right = self.eye_res(x3)
+    right = right.view(right.shape[0], -1)
 
-    p_x1 = self.facefc_pitch(x1)
-    p_x2 = self.eyefc_pitch(x2)
-    p_x3 = self.eyefc_pitch(x3)
-
-    y_x1 = self.facefc_yaw(x1)
-    y_x2 = self.eyefc_yaw(x2)
-    y_x3 = self.eyefc_yaw(x3)
-
-    p_features = torch.cat((p_x1, p_x2, p_x3), 1)
-    y_features = torch.cat((y_x1, y_x2, y_x3), 1)
+    p_features = torch.cat((face, left, right), 1)
+    y_features = torch.cat((face, left, right), 1)
 
 
-    pre_pitch_gaze = self.fc_pitch_gaze(p_features)
-    pre_yaw_gaze = self.fc_yaw_gaze(p_features)
-
-    pre_pitch_gaze = self.fc_pitch_gaze(y_features)
-    pre_yaw_gaze = self.fc_yaw_gaze(y_features)
+    pre_pitch_gaze = self.pitch_fc(p_features)
+    pre_yaw_gaze = self.yaw_fc(y_features)
 
     return pre_pitch_gaze, pre_yaw_gaze
 

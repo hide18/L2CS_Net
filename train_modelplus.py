@@ -16,8 +16,9 @@ import torch.backends.cudnn as cudnn
 from torchsummary import summary
 
 import datasets_plus
-from model_plus import GN
+from model_plus import Gaze3inputs
 from utils import gazeto3d, select_device, angular
+
 
 def parse_args():
   parser = argparse.ArgumentParser(description='Gaze estimation using the Gazenet based CNN network.')
@@ -84,7 +85,7 @@ def get_non_ignored_params(model):
 
 def get_fc_params(model):
   #Generator function that yields fc layer params.
-  b = [model.facefc_pitch, model.facefc_yaw, model.eyefc_pitch, model.eyefc_yaw, model.fc_yaw_gaze, model.fc_pitch_gaze]
+  b = [model.pitch_fc, model.yaw_fc]
   for i in range(len(b)):
     for module_name, module in b[i].named_modules():
       if 'bn' in module_name:
@@ -103,19 +104,19 @@ def load_filtered_state_dict(model, snapshot):
 
 def getArch_weights(arch, bins):
   if arch == 'ResNet18':
-    model = GN(torchvision.models.resnet.BasicBlock, [2, 2, 2, 2], 3, bins)
+    model = Gaze3inputs(torchvision.models.resnet.BasicBlock, [2, 2, 2, 2], 3, bins)
     pre_url = 'https://download.pytorch.org/models/resnet18-5c106cde.pth'
   elif arch == 'ResNet34':
-    model = GN(torchvision.models.resnet.BasicBlock, [3, 4, 6, 3], 3, bins)
+    model = Gaze3inputs(torchvision.models.resnet.BasicBlock, [3, 4, 6, 3], 3, bins)
     pre_url = 'https://download.pytorch.org/models/resnet34-333f7ec4.pth'
   elif arch == 'ResNet101':
-    model = GN(torchvision.models.resnet.Botteleneck, [3, 4, 23, 3], 3, bins)
+    model = Gaze3inputs(torchvision.models.resnet.Botteleneck, [3, 4, 23, 3], 3, bins)
     pre_url = 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth'
   elif arch == 'ResNet152':
-    model = GN(torchvision.models.resnet.Botteleneck, [3, 8, 36, 3], 3, bins)
+    model = Gaze3inputs(torchvision.models.resnet.Botteleneck, [3, 8, 36, 3], 3, bins)
     pre_url = 'https://download.pytorch.org/models/resnet152-b121ed2d.pth'
   else:
-    model = GN(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, bins)
+    model = Gaze3inputs(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, bins)
     pre_url = 'https://download.pytorch.org/models/resnet50-19c8e357.pth'
 
   return model, pre_url
@@ -142,7 +143,7 @@ if __name__=='__main__':
   ])
 
   transformation_eye = transforms.Compose([
-    transforms.Resize((108, 180)),
+    transforms.Resize((72, 120)),
     transforms.ToTensor(),
     transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])
   ])
@@ -151,7 +152,10 @@ if __name__=='__main__':
   if dataset=="gaze360":
     model, pre_url = getArch_weights(args.arch, 180)
     if args.snapshot == '':
-            load_filtered_state_dict(model, model_zoo.load_url(pre_url))
+      face = model.face_res
+      eye = model.eye_res
+      load_filtered_state_dict(face, model_zoo.load_url(pre_url))
+      load_filtered_state_dict(eye, model_zoo.load_url(pre_url))
     else:
         saved_state_dict = torch.load(args.snapshot)
         model.load_state_dict(saved_state_dict)
@@ -201,8 +205,10 @@ if __name__=='__main__':
     softmax = nn.Softmax(dim=1).cuda(gpu)
 
     optimizer_gaze = torch.optim.Adam([
-      {'params' : get_ignored_params(model), 'lr' : 0},
-      {'params' : get_non_ignored_params(model), 'lr' : args.lr},
+      {'params' : get_ignored_params(face), 'lr' : 0},
+      {'params' : get_ignored_params(eye), 'lr' : 0},
+      {'params' : get_non_ignored_params(face), 'lr' : args.lr},
+      {'params' : get_non_ignored_params(eye), 'lr' : args.lr},
       {'params' : get_fc_params(model), 'lr' : args.lr}
     ], lr = args.lr)
 
@@ -241,23 +247,23 @@ if __name__=='__main__':
           #Calculate gaze angular
           pitch, yaw = model(face, left, right)
 
-          #Cross Entropy Loss
           loss_pitch = criterion(pitch, label_pitch)
           loss_yaw = criterion(yaw, label_yaw)
 
           #Predict gaze angular
-          pitch_predicted = softmax(pitch)
-          yaw_predicted = softmax(yaw)
-          pitch_predicted = torch.sum(pitch_predicted * idx_tensor, 1) * 2 - 180
-          yaw_predicted = torch.sum(yaw_predicted * idx_tensor, 1) * 2 - 180
+          pre_pitch = softmax(pitch)
+          pre_yaw = softmax(yaw)
+          pre_pitch = torch.sum(pre_pitch * idx_tensor, 1) * 2 - 180
+          pre_yaw = torch.sum(pre_yaw * idx_tensor, 1) * 2 - 180
 
-          #MSE Loss
-          loss_reg_pitch = reg_criterion(pitch_predicted, label_pitch_cont)
-          loss_reg_yaw = reg_criterion(yaw_predicted, label_yaw_cont)
+          #Loss
+          loss_cont_pitch = reg_criterion(pre_pitch, label_pitch_cont)
+          loss_cont_yaw = reg_criterion(pre_yaw, label_yaw_cont)
 
           #Total Loss
-          loss_pitch += alpha * loss_reg_pitch
-          loss_yaw += alpha * loss_reg_yaw
+          loss_pitch += alpha * loss_cont_pitch
+          loss_yaw += alpha * loss_cont_yaw
+
           sum_loss_pitch += loss_pitch
           sum_loss_yaw += loss_yaw
 
@@ -288,18 +294,15 @@ if __name__=='__main__':
             label_pitch = cont_labels[:, 0].float() * np.pi / 180
             label_yaw = cont_labels[:, 1].float() * np.pi / 180
 
-            gaze_pitch, gaze_yaw = model(face, left, right)
+            pitch, yaw = model(face, left, right)
 
-            _, pitch_binpred = torch.max(gaze_pitch.data, 1)
-            _, yaw_binpred = torch.max(gaze_yaw.data, 1)
+            pre_pitch = softmax(pitch)
+            pre_yaw = softmax(yaw)
+            pre_pitch = torch.sum(pre_pitch * idx_tensor, 1).cpu() * 2 - 180
+            pre_yaw = torch.sum(pre_yaw * idx_tensor, 1).cpu() * 2 - 180
 
-            pitch_predicted = softmax(gaze_pitch)
-            yaw_predicted = softmax(gaze_yaw)
-            pitch_predicted = torch.sum(pitch_predicted * idx_tensor, 1).cpu() * 2 - 180
-            yaw_predicted = torch.sum(yaw_predicted * idx_tensor, 1).cpu() * 2 - 180
-
-            pitch_predicted = pitch_predicted * np.pi / 180
-            yaw_predicted = yaw_predicted * np.pi / 180
+            pitch_predicted = pre_pitch * np.pi / 180
+            yaw_predicted = pre_yaw * np.pi / 180
 
             for p, y, pl, yl in zip(pitch_predicted, yaw_predicted, label_pitch, label_yaw):
               avg_error += angular(gazeto3d([p, y]), gazeto3d([pl, yl]))
