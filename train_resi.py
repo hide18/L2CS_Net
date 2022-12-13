@@ -245,13 +245,13 @@ if __name__=='__main__':
           label_yaw_cont = Variable(cont_labels[:, 1]).cuda(gpu)
 
           #Calculate gaze angular
-          face_picth, face_yaw, eyes_pitch, eyeys_yaw = model(face, left, right)
+          face_picth, face_yaw, eyes_pitch, eyes_yaw = model(face, left, right)
 
           #Predict gaze angular
           pre_gc_pitch = softmax(face_picth)
           pre_gc_yaw = softmax(face_yaw)
           pre_gr_pitch = softmax(eyes_pitch)
-          pre_gr_yaw = softmax(eyeys_yaw)
+          pre_gr_yaw = softmax(eyes_yaw)
 
           pre_gc_pitch = torch.sum(pre_gc_pitch * idx_tensor, 1) * 2 - 180
           pre_gc_yaw = torch.sum(pre_gc_yaw * idx_tensor, 1) * 2 - 180
