@@ -16,7 +16,7 @@ import torch.backends.cudnn as cudnn
 from torchsummary import summary
 
 import datasets_plus
-from model_residualback import GResidual
+from model_residualback2 import GResidual
 from utils import gazeto3d, select_device, angular
 
 def parse_args():
@@ -85,26 +85,6 @@ def get_non_ignored_params(model):
 def get_facefc_params(model):
   #Generator function that yields fc layer params.
   b = [model.face_pitch, model.face_yaw]
-  for i in range(len(b)):
-    for module_name, module in b[i].named_modules():
-      if 'bn' in module_name:
-        module.eval()
-      for name, param in module.named_parameters():
-        yield param
-
-def get_leftfc_params(model):
-  #Generator function that yields fc layer params.
-  b = [model.left_pitch, model.left_yaw]
-  for i in range(len(b)):
-    for module_name, module in b[i].named_modules():
-      if 'bn' in module_name:
-        module.eval()
-      for name, param in module.named_parameters():
-        yield param
-
-def get_rightfc_params(model):
-  #Generator function that yields fc layer params.
-  b = [model.right_pitch, model.right_yaw]
   for i in range(len(b)):
     for module_name, module in b[i].named_modules():
       if 'bn' in module_name:
@@ -244,8 +224,6 @@ if __name__=='__main__':
       {'params' : get_non_ignored_params(model.left_res), 'lr' : args.lr},
       {'params' : get_non_ignored_params(model.right_res), 'lr' : args.lr},
       {'params' : get_facefc_params(model), 'lr' : args.lr},
-      {'params' : get_leftfc_params(model), 'lr' : args.lr},
-      {'params' : get_rightfc_params(model), 'lr' : args.lr},
       {'params' : get_eyefc_params(model), 'lr' : args.lr}
     ], lr = args.lr)
 
@@ -317,7 +295,9 @@ if __name__=='__main__':
           grad_seq = [torch.tensor(1.0).cuda(gpu) for _ in range(len(loss_seq))]
           optimizer_gaze.zero_grad(set_to_none=True)
           torch.autograd.backward(loss_seq, grad_seq)
+          del loss_seq, grad_seq
           optimizer_gaze.step()
+          torch.cuda.empty_cache()
 
           iter_gaze += 1
 
