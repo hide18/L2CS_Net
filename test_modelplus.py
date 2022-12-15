@@ -12,7 +12,7 @@ import torch.backends.cudnn as cudnn
 
 import datasets_plus
 from utils import select_device, natural_keys, gazeto3d, angular
-from ca_net import AttnNet
+from model_plus import Gaze3inputs
 
 def parse_args():
   parser = argparse.ArgumentParser(
@@ -53,15 +53,15 @@ def parse_args():
 
 def getArch(arch, bins):
   if arch == 'ResNet18':
-    model = AttnNet(torchvision.models.resnet.BasicBlock, [2, 2, 2, 2], 3, bins)
+    model = Gaze3inputs(torchvision.models.resnet.BasicBlock, [2, 2, 2, 2], 3, bins)
   elif arch == 'ResNet34':
-    model = AttnNet(torchvision.models.resnet.BasicBlock, [3, 4, 6, 3], 3, bins)
+    model = Gaze3inputs(torchvision.models.resnet.BasicBlock, [3, 4, 6, 3], 3, bins)
   elif arch == 'ResNet101':
-    model = AttnNet(torchvision.models.resnet.Botteleneck, [3, 4, 23, 3], 3, bins)
+    model = Gaze3inputs(torchvision.models.resnet.Botteleneck, [3, 4, 23, 3], 3, bins)
   elif arch == 'ResNet152':
-    model = AttnNet(torchvision.models.resnet.Botteleneck, [3, 8, 36, 3], 3, bins)
+    model = Gaze3inputs(torchvision.models.resnet.Botteleneck, [3, 8, 36, 3], 3, bins)
   else:
-    model = AttnNet(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, bins)
+    model = Gaze3inputs(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, bins)
 
   return model
 
