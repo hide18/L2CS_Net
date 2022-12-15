@@ -135,8 +135,8 @@ if __name__ == '__main__':
             pitch = softmax(pitch)
             yaw = softmax(yaw)
 
-            pitch = torch.sum(pitch * idx_tensor, 1).cpu() * bin_width - 180
-            yaw = torch.sum(yaw * idx_tensor, 1).cpu() * bin_width - 180
+            pitch = torch.sum(pitch * idx_tensor, 1).cpu() * bin_width - angle
+            yaw = torch.sum(yaw * idx_tensor, 1).cpu() * bin_width - angle
 
             pitch_predicted = pitch * np.pi / 180
             yaw_predicted = yaw * np.pi / 180
