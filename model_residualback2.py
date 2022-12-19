@@ -69,7 +69,6 @@ class GResidual(nn.Module):
     #Get Face Features
     face = self.face_res(x1)
     face = face.view(face.shape[0], -1)
-    print(face.size())
     p_face = self.face_pitch(face)
     y_face = self.face_yaw(face)
 
