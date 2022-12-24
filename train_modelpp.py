@@ -12,7 +12,6 @@ from torch.autograd import Variable
 from torch.utils.data import DataLoader
 import torch.utils.model_zoo as model_zoo
 from torchvision import transforms, models
-from torchvision.models.resnet import Bottel
 import torch.backends.cudnn as cudnn
 from torchsummary import summary
 
