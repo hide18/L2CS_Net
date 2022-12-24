@@ -130,7 +130,13 @@ class ResVgg(nn.Module):
     return nn.Sequential(*layers)
 
 #if you check this network, try to start the code.
-#model = GN(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, 90)
+cfg = {
+    "A": [64, "M", 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],
+    "B": [64, 64, "M", 128, 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],
+    "D": [64, 64, "M", 128, 128, "M", 256, 256, 256, "M", 512, 512, 512, "M", 512, 512, 512, "M"],
+    "E": [64, 64, "M", 128, 128, "M", 256, 256, 256, 256, "M", 512, 512, 512, 512, "M", 512, 512, 512, 512, "M"],
+}
+model = ResVgg(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], cfg["E"], num_bins=180)
 #y = torch.rand(4, 3, 224, 224)
 #print(model(y)[0].shape)
-#summary(model, [(1, 3, 224, 224), (1, 3, 60, 36), (1, 3, 60, 36)])
+summary(model, [(1, 3, 224, 224), (1, 3, 60, 36), (1, 3, 60, 36)])
