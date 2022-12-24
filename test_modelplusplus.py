@@ -12,7 +12,7 @@ import torch.backends.cudnn as cudnn
 
 import datasets_plus
 from utils import select_device, natural_keys, gazeto3d, angular
-from model_plus import Gaze3inputs
+from model_plusplus import Gaze3inputs
 
 def parse_args():
   parser = argparse.ArgumentParser(

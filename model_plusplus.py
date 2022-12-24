@@ -8,9 +8,9 @@ import torch.nn.functional as F
 from torchinfo import summary
 from collections import OrderedDict
 
-class GResidual(nn.Module):
+class Gaze3inputs(nn.Module):
   def __init__(self, block, layers, image_channels, num_bins):
-    super(GResidual, self).__init__()
+    super(Gaze3inputs, self).__init__()
 
     self.in_channels = 64
     self.face_res = nn.Sequential(OrderedDict([
@@ -51,11 +51,13 @@ class GResidual(nn.Module):
       ('avgpool', nn.AdaptiveAvgPool2d((1, 1)))
     ]))
 
-    self.face_pitch = nn.Linear(512 * block.expansion, num_bins)
-    self.face_yaw = nn.Linear(512 * block.expansion, num_bins)
+    self.pitch_fc = nn.Linear(512 * block.expansion * 3, num_bins)
+    self.yaw_fc = nn.Linear(512 * block.expansion * 3, num_bins)
 
-    self.eye_pitch = nn.Linear(512 * block.expansion * 2, num_bins)
-    self.eye_yaw = nn.Linear(512 * block.expansion * 2, num_bins)
+
+
+    #self.fc_yaw_gaze = nn.Linear(512 * block.expansion * 3, num_bins)
+    #self.fc_pitch_gaze = nn.Linear(512 * block.expansion * 3, num_bins)
 
     for m in self.modules():
       if isinstance(m, nn.Conv2d):
@@ -69,20 +71,22 @@ class GResidual(nn.Module):
     #Get Face Features
     face = self.face_res(x1)
     face = face.view(face.shape[0], -1)
-    p_face = self.face_pitch(face)
-    y_face = self.face_yaw(face)
 
-    #Get Eye Features
+    #Get Eye Featuresfrom tkinter.colorchooser import askcolor
     left = self.left_res(x2)
     left = left.view(left.shape[0], -1)
+
     right = self.right_res(x3)
     right = right.view(right.shape[0], -1)
-    eyes = torch.cat((left, right), 1)
 
-    p_eye = self.eye_pitch(eyes)
-    y_eye = self.eye_yaw(eyes)
+    p_features = torch.cat((face, left, right), 1)
+    y_features = torch.cat((face, left, right), 1)
 
-    return p_face, y_face, p_eye, y_eye
+
+    pre_pitch_gaze = self.pitch_fc(p_features)
+    pre_yaw_gaze = self.yaw_fc(y_features)
+
+    return pre_pitch_gaze, pre_yaw_gaze
 
   def _make_layer(self, block, num_res_blocks, first_conv_out_channels, stride):
     identity_conv = None
@@ -105,10 +109,7 @@ class GResidual(nn.Module):
     return nn.Sequential(*layers)
 
 #if you check this network, try to start the code.
-#model = GResidual(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, 90)
+#model = GN(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, 90)
 #y = torch.rand(4, 3, 224, 224)
 #print(model(y)[0].shape)
 #summary(model, [(1, 3, 224, 224), (1, 3, 60, 36), (1, 3, 60, 36)])
-#x = torch.rand(16, 3, 224, 224)
-#y = torch.rand(16, 3, 60, 36)
-#model(x, y, y)
