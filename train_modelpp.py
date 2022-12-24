@@ -326,7 +326,7 @@ if __name__=='__main__':
 
 
     print('Ready to train and validation network.')
-    configuration = f"\ntrain_validation configuration, gpu_id={args.gpu_id}, batch_size={batch_size}, model_arch={args.arch}\n"
+    configuration = f"\ntrain_validation configuration, gpu_id={args.gpu_id}, batch_size={batch_size}, model_arch={res, vgg}\n"
 
     epoch_list = []
     avg_MAE = []
