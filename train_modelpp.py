@@ -285,14 +285,14 @@ if __name__=='__main__':
     param_to_update_1 = []
     param_to_update_2 = []
 
-    if args.arch == 'VGG16':
+    if vgg == 'VGG16':
       update_param_names_1 = []
       update_param_names_2 = []
       for i in range(4):
         update_param_names_1.append(nth_keys(model_features, i))
       for j in range(4, 26):
         update_param_names_2.append(nth_keys(model_features, j))
-    elif args.arch == 'VGG19':
+    elif vgg == 'VGG19':
       update_param_names_1 = []
       update_param_names_2 = []
       for i in range(4):
