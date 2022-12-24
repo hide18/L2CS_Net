@@ -135,15 +135,15 @@ def getRes_arch(arch):
     layers = [3, 4, 6, 3]
     pre_url = 'https://download.pytorch.org/models/resnet34-333f7ec4.pth'
   elif arch == 'ResNet101':
-    block = torchvision.models.resnet.Bottleeneck
+    block = torchvision.models.resnet.Bottleneck
     layers = [3, 4, 23, 3]
     pre_url = 'https://download.pytorch.org/models/resnet101-5d3b4d8f.pth'
   elif arch == 'ResNet152':
-    block = torchvision.models.resnet.Bottleeneck
+    block = torchvision.models.resnet.Bottleneck
     layers = [3, 8, 36, 3]
     pre_url = 'https://download.pytorch.org/models/resnet152-b121ed2d.pth'
   else:
-    block = torchvision.models.resnet.Bottleeneck
+    block = torchvision.models.resnet.Bottleneck
     layers = [3, 4, 6, 3]
     pre_url = 'https://download.pytorch.org/models/resnet50-19c8e357.pth'
   return block, layers, pre_url
