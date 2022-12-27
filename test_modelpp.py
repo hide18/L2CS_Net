@@ -40,7 +40,10 @@ def parse_args():
     '--batch_size', dest='batch_size', help='Batch size.', default=100, type=int
   )
   parser.add_argument(
-    '--arch', dest='arch', help='Network architecture using backbone.', default='ResNet50', type=str
+    '--arch_res', dest='arch_res', help='Use the backbone network.', default='ResNet50', type=str
+  )
+  parser.add_argument(
+    '--arch_vgg', dest='arch_vgg', help='Use the backbone network.', default='VGG16', type=str
   )
   parser.add_argument(
     '--bins', default='180', type=int
@@ -51,26 +54,62 @@ def parse_args():
   args = parser.parse_args()
   return args
 
-def getArch(arch, bins):
+def getRes_arch(arch):
   if arch == 'ResNet18':
-    model = ResVgg(torchvision.models.resnet.BasicBlock, [2, 2, 2, 2], 3, bins)
+    block = torchvision.models.resnet.BasicBlock
+    layers = [2, 2, 2, 2]
   elif arch == 'ResNet34':
-    model = ResVgg(torchvision.models.resnet.BasicBlock, [3, 4, 6, 3], 3, bins)
+    block = torchvision.models.resnet.BasicBlock
+    layers = [3, 4, 6, 3]
   elif arch == 'ResNet101':
-    model = ResVgg(torchvision.models.resnet.Botteleneck, [3, 4, 23, 3], 3, bins)
+    block = torchvision.models.resnet.Bottleneck
+    layers = [3, 4, 23, 3]
   elif arch == 'ResNet152':
-    model = ResVgg(torchvision.models.resnet.Botteleneck, [3, 8, 36, 3], 3, bins)
+    block = torchvision.models.resnet.Bottleneck
+    layers = [3, 8, 36, 3]
   else:
-    model = ResVgg(torchvision.models.resnet.Bottleneck, [3, 4, 6, 3], 3, bins)
+    block = torchvision.models.resnet.Bottleneck
+    layers = [3, 4, 6, 3]
+  return block, layers
 
-  return model
+def getVgg_arch(arch):
+  cfg = {
+    "A": [64, "M", 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],
+    "B": [64, 64, "M", 128, 128, "M", 256, 256, "M", 512, 512, "M", 512, 512, "M"],
+    "D": [64, 64, "M", 128, 128, "M", 256, 256, 256, "M", 512, 512, 512, "M", 512, 512, 512, "M"],
+    "E": [64, 64, "M", 128, 128, "M", 256, 256, 256, 256, "M", 512, 512, 512, 512, "M", 512, 512, 512, 512, "M"],
+  }
+  batch_norm = False
+
+  if arch == 'VGG11':
+    cfg = cfg["A"]
+  elif arch == 'VGG11_bn':
+    cfg = cfg["A"]
+    batch_norm = True
+  elif arch == 'VGG13':
+    cfg = cfg["B"]
+  elif arch == 'VGG13_bn':
+    cfg = cfg["B"]
+    batch_norm = True
+  elif arch == 'VGG16':
+    cfg = cfg["D"]
+  elif arch == 'VGG16_bn':
+    cfg = cfg["D"]
+    batch_norm = True
+  elif arch == 'VGG19':
+    cfg = cfg["E"]
+  else:
+    cfg = cfg["E"]
+    batch_norm = True
+  return cfg, batch_norm
 
 if __name__ == '__main__':
   args = parse_args()
   cudnn.enabled = True
   gpu = select_device(args.gpu_id, batch_size=args.batch_size)
   batch_size = args.batch_size
-  arch = args.arch
+  res = args.arch_res
+  vgg = args.arch_vgg
   dataset = args.dataset
   evalpath = args.evalpath
   snapshot = args.snapshot
@@ -118,7 +157,9 @@ if __name__ == '__main__':
       avg_MAE = []
 
       for epochs in folder:
-        model = getArch(arch, bins)
+        block, layers = getRes_arch(res)
+        cfg, batch_norm = getVgg_arch(vgg)
+        model = ResVgg(block, layers, cfg, batch_norm, num_bins=180)
         saved_state_dict = torch.load(os.path.join(snapshot, epochs))
         model.load_state_dict(saved_state_dict)
         model.cuda(gpu)
