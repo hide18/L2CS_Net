@@ -148,7 +148,7 @@ if __name__ == '__main__':
     folder.sort(key=natural_keys)
     softmax = nn.Softmax(dim=1)
     with open(os.path.join(evalpath, dataset+".log"), 'w') as outfile:
-      configuration = f"\ntest config = gpu={gpu}, batch_size={batch_size}, model_arch={arch}\nStart testing model={model_name}\n"
+      configuration = f"\ntest config = gpu={gpu}, batch_size={batch_size}, model_arch={res, vgg}\nStart testing model={model_name}\n"
       print(configuration)
       outfile.write(configuration)
       epoch_list = []
