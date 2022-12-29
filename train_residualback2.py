@@ -1,6 +1,6 @@
 from cProfile import label
 from cgi import test
-import os, argparse, time, datetime
+import os, argparse, time, datetime, gc
 from random import shuffle
 
 import numpy as np
@@ -296,6 +296,7 @@ if __name__=='__main__':
           optimizer_gaze.zero_grad(set_to_none=True)
           torch.autograd.backward(loss_seq, grad_seq)
           del loss_seq, grad_seq
+          gc.collect()
           optimizer_gaze.step()
           torch.cuda.empty_cache()
 
